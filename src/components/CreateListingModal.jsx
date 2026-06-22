@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Camera, Upload } from 'lucide-react';
 import { srmCampuses, srmHostels, categories, srmMeetupHotspots } from '../data/mockData';
 import { allSrmSubjectsList } from '../data/srmSubjects';
-import { generateAIListing, getPriceRecommendation, detectScam } from '../utils/aiSimulator';
+import { detectScam } from '../utils/aiSimulator';
 
 export default function CreateListingModal({ isOpen, onClose, onSubmitListing, userProfile, enableMeetupHotspot = false }) {
   if (!isOpen) return null;
@@ -26,10 +26,6 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
   const [subjectQuery, setSubjectQuery] = useState('');
   const [showSubjectSuggestions, setShowSubjectSuggestions] = useState(false);
 
-  // AI features
-  const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiGenerated, setAiGenerated] = useState(false);
-  const [priceRec, setPriceRec] = useState(null);
   const [scamResult, setScamResult] = useState(null);
 
   // Seller details
@@ -58,14 +54,6 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
     }
   }, [campus]);
 
-  // Update AI price recommendation when category or condition changes
-  useEffect(() => {
-    if (category && condition) {
-      const rec = getPriceRecommendation(category, condition);
-      setPriceRec(rec);
-    }
-  }, [category, condition]);
-
   // Run scam detection when key fields change
   useEffect(() => {
     if (title && description && category) {
@@ -75,19 +63,6 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
       setScamResult(null);
     }
   }, [title, price, description, category]);
-
-  function handleAIGenerate() {
-    setAiGenerating(true);
-    setTimeout(() => {
-      const generated = generateAIListing(category);
-      setTitle(generated.title);
-      setDescription(generated.description);
-      if (tradeType !== 'Free') setPrice(String(generated.price));
-      setAiGenerating(false);
-      setAiGenerated(true);
-      setTimeout(() => setAiGenerated(false), 3000);
-    }, 1200); // Simulate AI thinking delay
-  }
 
   const handleImageUpload = (file) => {
     if (!file) return;
@@ -158,37 +133,6 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
         <form onSubmit={handleSubmit}>
           <div className="modal-body" style={{ maxHeight: '72vh', overflowY: 'auto', padding: '1.5rem 0' }}>
             
-            {/* ── AI Smart Listing Banner ── */}
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%)',
-              border: '1.5px solid rgba(59, 130, 246, 0.25)',
-              borderRadius: 16, padding: '14px 20px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginBottom: 20, gap: 12, flexWrap: 'wrap',
-            }}>
-              <div>
-                <div style={{ color: '#93c5fd', fontWeight: 800, fontSize: 13, marginBottom: 2 }}>🤖 AI Smart Assistant</div>
-                <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Auto-fill title, descriptions & prices instantly</div>
-              </div>
-              <button
-                type="button"
-                onClick={handleAIGenerate}
-                disabled={aiGenerating}
-                style={{
-                  background: aiGenerated
-                    ? 'linear-gradient(135deg, #10b981, #059669)'
-                    : 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-                  border: 'none', borderRadius: 10, padding: '9px 18px',
-                  color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                  transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)', opacity: aiGenerating ? 0.7 : 1,
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  boxShadow: aiGenerated ? '0 4px 10px rgba(16, 185, 129, 0.25)' : '0 4px 10px rgba(59, 130, 246, 0.25)'
-                }}
-              >
-                {aiGenerating ? '⏳ Generating…' : aiGenerated ? '✅ Generated!' : '✨ Generate with AI'}
-              </button>
-            </div>
-
             {/* Basic Info */}
             <div className="form-group">
               <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Item Title *</label>
@@ -310,37 +254,6 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
                   style={{ borderRadius: '10px', padding: '0.75rem' }}
                 />
                 
-                {/* AI Price Recommendation */}
-                {priceRec && tradeType !== 'Free' && (
-                  <div style={{
-                    marginTop: 10,
-                    background: 'rgba(245,158,11,0.06)',
-                    border: '1.5px solid rgba(245,158,11,0.22)',
-                    borderRadius: 12, padding: '10px 14px',
-                  }}>
-                    <div style={{ color: '#f59e0b', fontWeight: 800, fontSize: 11, marginBottom: 6 }}>💰 AI Price recommendation</div>
-                    <div style={{ display: 'flex', gap: 16 }}>
-                      <div>
-                        <div style={{ color: 'var(--text-light)', fontSize: 10 }}>Market Value</div>
-                        <div style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>₹{priceRec.newPrice}</div>
-                      </div>
-                      <div>
-                        <div style={{ color: 'var(--text-light)', fontSize: 10 }}>Suggested Selling</div>
-                        <div style={{ color: '#10b981', fontWeight: 700, fontSize: 13 }}>₹{priceRec.recommended}</div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setPrice(String(priceRec.recommended))}
-                      style={{
-                        marginTop: 8, background: 'rgba(245,158,11,0.15)',
-                        border: '1px solid rgba(245,158,11,0.25)',
-                        borderRadius: 6, padding: '4px 10px',
-                        color: '#f59e0b', fontSize: 11, cursor: 'pointer', fontWeight: 700
-                      }}
-                    >Use Suggested Price</button>
-                  </div>
-                )}
               </div>
             </div>
 
