@@ -912,11 +912,11 @@ export const srmHostels = {
       "Pierre Fauchard Hostel",
       "N Block Hostel",
       "International Hostel",
-      "JA Block Hostel"
+      "JA Block Hostel",
+      "Manoranjitham Hostel",
+      "Agastiyar Hostel"
     ],
     girls: [
-      "Manoranjitham Hostel",
-      "Agastiyar Hostel",
       "Mullai Hostel",
       "Thamarai Hostel",
       "Malligai Hostel",
