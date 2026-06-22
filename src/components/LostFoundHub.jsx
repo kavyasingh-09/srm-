@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Search, MapPin, Calendar, PlusCircle, FileText, User, Mail, Info, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { srmCampuses } from '../data/mockData';
 
@@ -17,6 +17,9 @@ export default function LostFoundHub({ items, onCreateReport }) {
   const [contactName, setContactName] = useState('');
   const [contactDetails, setContactDetails] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [uploadedImage, setUploadedImage] = useState('');
+  const uploadInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const filteredItems = items.filter((item) => {
     const matchesTab = activeTab === 'All' || item.type === activeTab;
@@ -35,11 +38,11 @@ export default function LostFoundHub({ items, onCreateReport }) {
       return;
     }
 
-    const defaultImage = imageUrl.trim() !== ''
+    const defaultImage = uploadedImage || (imageUrl.trim() !== ''
       ? imageUrl.trim()
       : type === 'Lost'
         ? 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=60'
-        : 'https://images.unsplash.com/photo-1578358371354-3e1e754b77f4?w=600&auto=format&fit=crop&q=60';
+        : 'https://images.unsplash.com/photo-1578358371354-3e1e754b77f4?w=600&auto=format&fit=crop&q=60');
 
     onCreateReport({
       title,
@@ -60,7 +63,18 @@ export default function LostFoundHub({ items, onCreateReport }) {
     setContactName('');
     setContactDetails('');
     setImageUrl('');
+    setUploadedImage('');
     setShowReportForm(false);
+  };
+
+  const handleImageUpload = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setUploadedImage(String(reader.result || ''));
+      setImageUrl('');
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -157,8 +171,53 @@ export default function LostFoundHub({ items, onCreateReport }) {
             </div>
 
             <div className="form-group">
-              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Image URL (Optional)</label>
-              <input type="text" className="form-control" placeholder="Paste picture URL here..." value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem' }} />
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Image (Optional)</label>
+              <input type="text" className="form-control" placeholder="Paste picture URL here..." value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setUploadedImage(''); }} style={{ borderRadius: '10px', padding: '0.75rem' }} />
+
+              <div style={{ display: 'flex', gap: 10, marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => uploadInputRef.current && uploadInputRef.current.click()}
+                  className="nav-btn nav-btn-secondary"
+                  style={{ borderRadius: 10, padding: '0.6rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                >
+                  <PlusCircle size={14} />
+                  Upload from device
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current && cameraInputRef.current.click()}
+                  className="nav-btn nav-btn-secondary"
+                  style={{ borderRadius: 10, padding: '0.6rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                >
+                  <PlusCircle size={14} />
+                  Take photo
+                </button>
+              </div>
+
+              <input
+                ref={(el) => (uploadInputRef.current = el)}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                style={{ display: 'none' }}
+              />
+              <input
+                ref={(el) => (cameraInputRef.current = el)}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                style={{ display: 'none' }}
+              />
+
+              {uploadedImage && (
+                <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <img src={uploadedImage} alt="Uploaded preview" style={{ width: '88px', height: '88px', objectFit: 'cover', borderRadius: '14px', border: '1px solid var(--glass-border)' }} />
+                  <button type="button" onClick={() => setUploadedImage('')} className="nav-btn nav-btn-secondary" style={{ borderRadius: 10, padding: '0.6rem 0.9rem' }}>Remove photo</button>
+                </div>
+              )}
             </div>
 
             <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem', marginTop: '0.5rem' }}>
@@ -223,90 +282,82 @@ export default function LostFoundHub({ items, onCreateReport }) {
         </div>
       </div>
 
-      {filteredItems.length === 0 ? (
-        <div className="empty-state glass-panel" style={{ borderRadius: '20px', padding: '4rem 2rem', border: '1px solid var(--glass-border)' }}>
-          <FileText size={48} className="empty-state-icon" style={{ color: 'var(--text-light)' }} />
-          <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginTop: '1rem', color: 'var(--text-primary)' }}>No Reports Found</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>Try a different search, or file the first report for your campus.</p>
-        </div>
-      ) : (
-        <div className="listings-grid" style={{ marginTop: '2rem' }}>
-          {filteredItems.map((item) => (
-            <div
-              key={item.id}
-              className="listing-card"
-              style={{
-                borderColor: item.type === 'Lost' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                boxShadow: item.type === 'Lost' ? '0 8px 24px -10px rgba(239, 68, 68, 0.1)' : '0 8px 24px -10px rgba(16, 185, 129, 0.1)'
-              }}
-            >
-              <div className="listing-image-container" style={{ height: '170px' }}>
-                <img src={item.image} alt={item.title} className="listing-image" />
-                <div className="listing-badge-container">
-                  <span
-                    className="listing-badge"
-                    style={{
-                      color: item.type === 'Lost' ? '#ef4444' : '#10b981',
-                      background: item.type === 'Lost' ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
-                      borderColor: item.type === 'Lost' ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
-                      borderWidth: '1px',
-                      borderStyle: 'solid',
-                      borderRadius: '6px',
-                      fontWeight: 800
-                    }}
-                  >
-                    {item.type}
-                  </span>
-                </div>
-
-                <span className="listing-campus-badge">{item.campus === 'Kattankulathur' ? 'KTR' : item.campus}</span>
+      <div className="listings-grid" style={{ marginTop: '2rem' }}>
+        {filteredItems.map((item) => (
+          <div
+            key={item.id}
+            className="listing-card"
+            style={{
+              borderColor: item.type === 'Lost' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+              boxShadow: item.type === 'Lost' ? '0 8px 24px -10px rgba(239, 68, 68, 0.1)' : '0 8px 24px -10px rgba(16, 185, 129, 0.1)'
+            }}
+          >
+            <div className="listing-image-container" style={{ height: '170px' }}>
+              <img src={item.image} alt={item.title} className="listing-image" />
+              <div className="listing-badge-container">
+                <span
+                  className="listing-badge"
+                  style={{
+                    color: item.type === 'Lost' ? '#ef4444' : '#10b981',
+                    background: item.type === 'Lost' ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
+                    borderColor: item.type === 'Lost' ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderRadius: '6px',
+                    fontWeight: 800
+                  }}
+                >
+                  {item.type}
+                </span>
               </div>
 
-              <div className="listing-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <span className="listing-category" style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-light)', letterSpacing: '0.5px' }}>
-                  {item.category}
+              <span className="listing-campus-badge">{item.campus === 'Kattankulathur' ? 'KTR' : item.campus}</span>
+            </div>
+
+            <div className="listing-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <span className="listing-category" style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-light)', letterSpacing: '0.5px' }}>
+                {item.category}
+              </span>
+
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                {item.title}
+              </h3>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                <MapPin size={13} style={{ color: 'var(--primary-color)' }} />
+                <span style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.location.split(',')[0]}</span>
+              </div>
+
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: 700, color: item.type === 'Lost' ? '#ef4444' : '#10b981' }}>
+                <Info size={12} />
+                {item.type === 'Lost' ? 'Please contact the owner if found' : 'Please verify ownership before claiming'}
+              </div>
+
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0.25rem 0 0.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {item.description}
+              </p>
+
+              <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '0.75rem', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', display: 'flex', alignItems: 'center', gap: '0.2rem', fontWeight: 500 }}>
+                  <Calendar size={12} />
+                  Reported: {item.createdAt}
                 </span>
 
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                  {item.title}
-                </h3>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  <MapPin size={13} style={{ color: 'var(--primary-color)' }} />
-                  <span style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.location.split(',')[0]}</span>
-                </div>
-
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: 700, color: item.type === 'Lost' ? '#ef4444' : '#10b981' }}>
-                  <Info size={12} />
-                  {item.type === 'Lost' ? 'Please contact the owner if found' : 'Please verify ownership before claiming'}
-                </div>
-
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0.25rem 0 0.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {item.description}
-                </p>
-
-                <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '0.75rem', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', display: 'flex', alignItems: 'center', gap: '0.2rem', fontWeight: 500 }}>
-                    <Calendar size={12} />
-                    Reported: {item.createdAt}
-                  </span>
-
-                  <div className="glass-panel" style={{ padding: '0.6rem 0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', fontSize: '0.78rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-primary)', fontWeight: 700 }}>
-                      <User size={10} />
-                      <span>{item.contactName}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '0.72rem' }}>
-                      <Mail size={10} />
-                      <span>{item.contactDetails}</span>
-                    </div>
+                <div className="glass-panel" style={{ padding: '0.6rem 0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', fontSize: '0.78rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-primary)', fontWeight: 700 }}>
+                    <User size={10} />
+                    <span>{item.contactName}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '0.72rem' }}>
+                    <Mail size={10} />
+                    <span>{item.contactDetails}</span>
                   </div>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

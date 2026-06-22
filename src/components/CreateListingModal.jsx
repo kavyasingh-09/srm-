@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Camera, Upload } from 'lucide-react';
 import { srmCampuses, srmHostels, categories, srmMeetupHotspots } from '../data/mockData';
 import { allSrmSubjectsList } from '../data/srmSubjects';
@@ -17,6 +17,8 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
   const [hostel, setHostel] = useState('');
   const [customImageUrl, setCustomImageUrl] = useState('');
   const [uploadedImage, setUploadedImage] = useState('');
+  const uploadInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   
   // Feature 1 & 2 states
   const [courseCode, setCourseCode] = useState('');
@@ -410,7 +412,7 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
               <input
                 type="text"
                 className="form-control"
-                placeholder="Paste a photo URL or use the camera upload below"
+                placeholder="Paste an image URL (optional)"
                 value={customImageUrl}
                 onChange={(e) => {
                   setCustomImageUrl(e.target.value);
@@ -418,32 +420,45 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
                 }}
                 style={{ borderRadius: '10px', padding: '0.75rem' }}
               />
-              <label
-                className="form-control"
-                style={{
-                  marginTop: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.6rem',
-                  cursor: 'pointer',
-                  borderRadius: '10px',
-                  padding: '0.75rem',
-                  border: '1px dashed var(--glass-border)',
-                  background: 'var(--card-bg)'
-                }}
-              >
-                <Camera size={16} />
-                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                  Take photo or upload from device
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={(e) => handleImageUpload(e.target.files?.[0])}
-                  style={{ display: 'none' }}
-                />
-              </label>
+
+              <div style={{ display: 'flex', gap: 10, marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => uploadInputRef.current && uploadInputRef.current.click()}
+                  className="nav-btn nav-btn-secondary"
+                  style={{ borderRadius: 10, padding: '0.6rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                >
+                  <Upload size={14} />
+                  Upload from device
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current && cameraInputRef.current.click()}
+                  className="nav-btn nav-btn-secondary"
+                  style={{ borderRadius: 10, padding: '0.6rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                >
+                  <Camera size={14} />
+                  Take photo
+                </button>
+              </div>
+
+              {/* Hidden file inputs for device upload and camera capture */}
+              <input
+                ref={(el) => (uploadInputRef.current = el)}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                style={{ display: 'none' }}
+              />
+              <input
+                ref={(el) => (cameraInputRef.current = el)}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                style={{ display: 'none' }}
+              />
               {uploadedImage && (
                 <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <img
