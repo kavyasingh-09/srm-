@@ -1,0 +1,14 @@
+import { build } from 'vite';
+import react from '@vitejs/plugin-react';
+
+await build({
+  root: process.cwd(),
+  configFile: false,
+  base: './',
+  plugins: [react()],
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
+});
+

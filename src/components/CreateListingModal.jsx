@@ -1,0 +1,577 @@
+import React, { useState, useEffect } from 'react';
+import { X, Camera, Upload } from 'lucide-react';
+import { srmCampuses, srmHostels, categories, srmMeetupHotspots } from '../data/mockData';
+import { allSrmSubjectsList } from '../data/srmSubjects';
+import { generateAIListing, getPriceRecommendation, detectScam } from '../utils/aiSimulator';
+
+export default function CreateListingModal({ isOpen, onClose, onSubmitListing, userProfile, enableMeetupHotspot = false }) {
+  if (!isOpen) return null;
+
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState(categories[1] || 'Textbooks');
+  const [price, setPrice] = useState('');
+  const [tradeType, setTradeType] = useState('Sell');
+  const [condition, setCondition] = useState('Like New');
+  const [description, setDescription] = useState('');
+  const [campus, setCampus] = useState(srmCampuses[0]);
+  const [hostel, setHostel] = useState('');
+  const [customImageUrl, setCustomImageUrl] = useState('');
+  const [uploadedImage, setUploadedImage] = useState('');
+  
+  // Feature 1 & 2 states
+  const [courseCode, setCourseCode] = useState('');
+  const [meetupHotspot, setMeetupHotspot] = useState(srmMeetupHotspots[0]);
+  const [subjectQuery, setSubjectQuery] = useState('');
+  const [showSubjectSuggestions, setShowSubjectSuggestions] = useState(false);
+
+  // AI features
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiGenerated, setAiGenerated] = useState(false);
+  const [priceRec, setPriceRec] = useState(null);
+  const [scamResult, setScamResult] = useState(null);
+
+  // Seller details
+  const [sellerName, setSellerName] = useState('');
+  const [sellerEmail, setSellerEmail] = useState('');
+  const [sellerPhone, setSellerPhone] = useState('');
+
+  // Pre-fill seller details from the logged-in user profile
+  useEffect(() => {
+    if (userProfile && isOpen) {
+      setSellerName(userProfile.name || '');
+      setSellerEmail(userProfile.email || '');
+      setSellerPhone(userProfile.phone || '');
+      setCampus(userProfile.campus || srmCampuses[0]);
+      setHostel(userProfile.hostel || '');
+    }
+  }, [userProfile, isOpen]);
+
+  // Dynamically set default hostel when campus changes
+  useEffect(() => {
+    if (campus === 'Kattankulathur') {
+      setHostel(srmHostels.Kattankulathur.boys[0]);
+    } else if (srmHostels[campus]) {
+      const firstGroup = srmHostels[campus].boys || srmHostels[campus];
+      setHostel(firstGroup[0] || '');
+    }
+  }, [campus]);
+
+  // Update AI price recommendation when category or condition changes
+  useEffect(() => {
+    if (category && condition) {
+      const rec = getPriceRecommendation(category, condition);
+      setPriceRec(rec);
+    }
+  }, [category, condition]);
+
+  // Run scam detection when key fields change
+  useEffect(() => {
+    if (title && description && category) {
+      const result = detectScam(title, Number(price) || 0, description, category);
+      setScamResult(result);
+    } else {
+      setScamResult(null);
+    }
+  }, [title, price, description, category]);
+
+  function handleAIGenerate() {
+    setAiGenerating(true);
+    setTimeout(() => {
+      const generated = generateAIListing(category);
+      setTitle(generated.title);
+      setDescription(generated.description);
+      if (tradeType !== 'Free') setPrice(String(generated.price));
+      setAiGenerating(false);
+      setAiGenerated(true);
+      setTimeout(() => setAiGenerated(false), 3000);
+    }, 1200); // Simulate AI thinking delay
+  }
+
+  const handleImageUpload = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setUploadedImage(String(reader.result || ''));
+      setCustomImageUrl('');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title || !description || !sellerName || !sellerEmail || !sellerPhone) {
+      alert("Please fill in all required fields!");
+      return;
+    }
+
+    const finalImage = uploadedImage || customImageUrl.trim();
+
+    const newListing = {
+      title,
+      category,
+      price: tradeType === 'Free' ? 0 : Number(price) || 0,
+      tradeType,
+      condition,
+      description,
+      campus,
+      hostel,
+      courseCode: courseCode.trim().toUpperCase(),
+      image: finalImage,
+      seller: {
+        name: sellerName,
+        email: sellerEmail,
+        phone: sellerPhone,
+        verified: sellerEmail.toLowerCase().endsWith('@srmist.edu.in'),
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sellerName)}`
+      }
+    };
+
+    onSubmitListing(newListing);
+    
+    // Reset Form
+    setTitle('');
+    setPrice('');
+    setDescription('');
+    setCustomImageUrl('');
+    setUploadedImage('');
+    setSellerName('');
+    setSellerEmail('');
+    setSellerPhone('');
+    setCourseCode('');
+    setSubjectQuery('');
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '680px', borderRadius: '24px' }}>
+        
+        <div className="modal-header" style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.25rem' }}>
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 850, letterSpacing: '-0.5px' }}>List an Item for Trade</h3>
+          <button className="modal-close-btn" onClick={onClose} style={{ borderRadius: '50%', padding: '0.4rem' }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ maxHeight: '72vh', overflowY: 'auto', padding: '1.5rem 0' }}>
+            
+            {/* ── AI Smart Listing Banner ── */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%)',
+              border: '1.5px solid rgba(59, 130, 246, 0.25)',
+              borderRadius: 16, padding: '14px 20px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: 20, gap: 12, flexWrap: 'wrap',
+            }}>
+              <div>
+                <div style={{ color: '#93c5fd', fontWeight: 800, fontSize: 13, marginBottom: 2 }}>🤖 AI Smart Assistant</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Auto-fill title, descriptions & prices instantly</div>
+              </div>
+              <button
+                type="button"
+                onClick={handleAIGenerate}
+                disabled={aiGenerating}
+                style={{
+                  background: aiGenerated
+                    ? 'linear-gradient(135deg, #10b981, #059669)'
+                    : 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                  border: 'none', borderRadius: 10, padding: '9px 18px',
+                  color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                  transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)', opacity: aiGenerating ? 0.7 : 1,
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  boxShadow: aiGenerated ? '0 4px 10px rgba(16, 185, 129, 0.25)' : '0 4px 10px rgba(59, 130, 246, 0.25)'
+                }}
+              >
+                {aiGenerating ? '⏳ Generating…' : aiGenerated ? '✅ Generated!' : '✨ Generate with AI'}
+              </button>
+            </div>
+
+            {/* Basic Info */}
+            <div className="form-group">
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Item Title *</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g., Casio FX-991EX Calculator, SRM Lab Coat"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                style={{ borderRadius: '10px', padding: '0.75rem' }}
+              />
+            </div>
+
+            {/* Course Code Autocomplete (only for Textbooks & Notes) */}
+            {(category === 'Textbooks' || category === 'Notes & Study Materials') && (
+              <div className="form-group" style={{ position: 'relative', marginBottom: '1.25rem' }}>
+                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  <span>SRM Course Code / Subject (Optional)</span>
+                  {courseCode && <span style={{ color: '#8b5cf6', fontWeight: 800, fontSize: '0.75rem' }}>Selected: {courseCode}</span>}
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Type code or subject name (e.g., DSA, 21CSC201J...)"
+                  value={subjectQuery}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSubjectQuery(val);
+                    setCourseCode(val);
+                    setShowSubjectSuggestions(true);
+                  }}
+                  onFocus={() => setShowSubjectSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSubjectSuggestions(false), 200)}
+                  style={{ borderRadius: '10px', padding: '0.75rem' }}
+                />
+                {showSubjectSuggestions && subjectQuery.trim() && (
+                  <div className="glass-panel" style={{
+                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                    background: 'rgba(15,23,42,0.98)', border: '1.5px solid var(--glass-border)',
+                    borderRadius: 12, maxHeight: 180, overflowY: 'auto', marginTop: 6,
+                    boxShadow: 'var(--shadow-lg)', padding: '4px'
+                  }}>
+                    {allSrmSubjectsList.filter(s => 
+                      s.code.toLowerCase().includes(subjectQuery.toLowerCase()) || 
+                      s.name.toLowerCase().includes(subjectQuery.toLowerCase())
+                    ).slice(0, 8).map((sub) => (
+                      <div
+                        key={sub.code}
+                        onClick={() => {
+                          setCourseCode(sub.code);
+                          setSubjectQuery(`${sub.code} - ${sub.name}`);
+                          setShowSubjectSuggestions(false);
+                          if (!title.trim()) {
+                            setTitle(`${sub.name} (${sub.code})`);
+                          }
+                        }}
+                        style={{
+                          padding: '10px 14px', cursor: 'pointer', borderRadius: 8,
+                          fontSize: '0.85rem', color: '#fff', display: 'flex', justifyContent: 'space-between',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(59,130,246,0.15)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                      >
+                        <strong style={{ color: '#93c5fd' }}>{sub.code}</strong>
+                        <span style={{ opacity: 0.85 }}>{sub.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+              <div className="form-group">
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Category</label>
+                <select className="form-control" value={category} onChange={(e) => setCategory(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  {categories.slice(1).map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Condition</label>
+                <select className="form-control" value={condition} onChange={(e) => setCondition(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  <option value="New (Sealed)">New (Sealed)</option>
+                  <option value="Like New">Like New</option>
+                  <option value="Good">Good</option>
+                  <option value="Fair">Fair</option>
+                  <option value="Needs repair">Needs repair</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Trade & Pricing */}
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+              <div className="form-group">
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Trade Type</label>
+                <select className="form-control" value={tradeType} onChange={(e) => setTradeType(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  <option value="Sell">Sell / One-time Buy</option>
+                  <option value="Rent">Rent out</option>
+                  <option value="Free">Give Away (Free)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Price (₹) {tradeType === 'Free' ? '(Disabled)' : '*'}</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="e.g., 500"
+                  disabled={tradeType === 'Free'}
+                  value={tradeType === 'Free' ? '' : price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  required={tradeType !== 'Free'}
+                  style={{ borderRadius: '10px', padding: '0.75rem' }}
+                />
+                
+                {/* AI Price Recommendation */}
+                {priceRec && tradeType !== 'Free' && (
+                  <div style={{
+                    marginTop: 10,
+                    background: 'rgba(245,158,11,0.06)',
+                    border: '1.5px solid rgba(245,158,11,0.22)',
+                    borderRadius: 12, padding: '10px 14px',
+                  }}>
+                    <div style={{ color: '#f59e0b', fontWeight: 800, fontSize: 11, marginBottom: 6 }}>💰 AI Price recommendation</div>
+                    <div style={{ display: 'flex', gap: 16 }}>
+                      <div>
+                        <div style={{ color: 'var(--text-light)', fontSize: 10 }}>Market Value</div>
+                        <div style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>₹{priceRec.newPrice}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: 'var(--text-light)', fontSize: 10 }}>Suggested Selling</div>
+                        <div style={{ color: '#10b981', fontWeight: 700, fontSize: 13 }}>₹{priceRec.recommended}</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPrice(String(priceRec.recommended))}
+                      style={{
+                        marginTop: 8, background: 'rgba(245,158,11,0.15)',
+                        border: '1px solid rgba(245,158,11,0.25)',
+                        borderRadius: 6, padding: '4px 10px',
+                        color: '#f59e0b', fontSize: 11, cursor: 'pointer', fontWeight: 700
+                      }}
+                    >Use Suggested Price</button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Campus & Hostel Selection */}
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+              <div className="form-group">
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>SRM Campus</label>
+                <select className="form-control" value={campus} onChange={(e) => setCampus(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  {srmCampuses.map((camp) => (
+                    <option key={camp} value={camp}>{camp}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Hostel / Specific Meetup Location *</label>
+                <select className="form-control" value={hostel} onChange={(e) => setHostel(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  {campus === 'Kattankulathur' ? (
+                    <>
+                      <optgroup label="Boys Hostels" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                        {srmHostels.Kattankulathur.boys.map((host) => (
+                          <option key={host} value={host}>{host}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Girls Hostels" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                        {srmHostels.Kattankulathur.girls.map((host) => (
+                          <option key={host} value={host}>{host}</option>
+                        ))}
+                      </optgroup>
+                    </>
+                  ) : srmHostels[campus] ? (
+                    <>
+                      <optgroup label="Boys Blocks" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                        {srmHostels[campus].boys.map((host) => (
+                          <option key={host} value={host}>{host}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Girls Blocks" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                        {srmHostels[campus].girls.map((host) => (
+                          <option key={host} value={host}>{host}</option>
+                        ))}
+                      </optgroup>
+                    </>
+                  ) : (
+                    <option value="Main Campus Campus Plaza">Main Campus Plaza</option>
+                  )}
+                </select>
+              </div>
+            </div>
+
+            {/* Preferred Meetup Hotspot (for KTR) */}
+            {enableMeetupHotspot && campus === 'Kattankulathur' && (
+              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Preferred SRM Campus Meetup Hotspot *</label>
+                <select className="form-control" value={meetupHotspot} onChange={(e) => setMeetupHotspot(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  {srmMeetupHotspots.map((spot) => (
+                    <option key={spot} value={spot}>{spot}</option>
+                  ))}
+                </select>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.4rem', display: 'block' }}>
+                  💡 Coordinate handovers at student landmarks to guarantee trade safety.
+                </span>
+              </div>
+            )}
+
+            {/* Image Selection Presets / Custom */}
+            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block' }}>Item Photo</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Paste a photo URL or use the camera upload below"
+                value={customImageUrl}
+                onChange={(e) => {
+                  setCustomImageUrl(e.target.value);
+                  setUploadedImage('');
+                }}
+                style={{ borderRadius: '10px', padding: '0.75rem' }}
+              />
+              <label
+                className="form-control"
+                style={{
+                  marginTop: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  cursor: 'pointer',
+                  borderRadius: '10px',
+                  padding: '0.75rem',
+                  border: '1px dashed var(--glass-border)',
+                  background: 'var(--card-bg)'
+                }}
+              >
+                <Camera size={16} />
+                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                  Take photo or upload from device
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                  style={{ display: 'none' }}
+                />
+              </label>
+              {uploadedImage && (
+                <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <img
+                    src={uploadedImage}
+                    alt="Uploaded preview"
+                    style={{ width: '88px', height: '88px', objectFit: 'cover', borderRadius: '14px', border: '1px solid var(--glass-border)' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setUploadedImage('')}
+                    style={{
+                      border: '1px solid var(--glass-border)',
+                      background: 'transparent',
+                      borderRadius: '10px',
+                      padding: '0.6rem 0.9rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Upload size={14} />
+                    Remove photo
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
+            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Description *</label>
+              <textarea
+                className="form-control"
+                style={{ resize: 'vertical', minHeight: '80px', borderRadius: '10px', padding: '0.75rem' }}
+                placeholder="Describe usage details, condition, availability time..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+              />
+            </div>
+
+            {/* ── AI Scam Detection ── */}
+            {scamResult && (
+              <div style={{
+                background: scamResult.safe ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)',
+                border: `1.5px solid ${scamResult.safe ? 'rgba(16,185,129,0.22)' : 'rgba(239,68,68,0.22)'}`,
+                borderRadius: 14, padding: '12px 16px', marginBottom: 20,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 18 }}>{scamResult.safe ? '🛡️' : '⚠️'}</span>
+                  <div>
+                    <div style={{ color: scamResult.safe ? '#10b981' : '#ef4444', fontWeight: 800, fontSize: 13 }}>
+                      {scamResult.safe ? 'Listing looks secure' : 'Listing warning flag!'}
+                    </div>
+                    <div style={{ color: 'var(--text-light)', fontSize: 11, marginTop: '2px' }}>
+                      Security Trust Index: {scamResult.score}/100
+                    </div>
+                  </div>
+                </div>
+                {scamResult.flags.length > 0 && (
+                  <ul style={{ margin: '8px 0 0', paddingLeft: 20, color: '#ef4444', fontSize: 12, lineHeight: 1.4 }}>
+                    {scamResult.flags.map((f, i) => <li key={i}>{f}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {/* Seller Contact Info */}
+            <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem', marginTop: '1.5rem' }}>
+              <h4 style={{ fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '1rem', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
+                Seller Information Check
+              </h4>
+              
+              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Your Name *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g., Rohan Verma"
+                  value={sellerName}
+                  onChange={(e) => setSellerName(e.target.value)}
+                  required
+                  style={{ borderRadius: '10px', padding: '0.75rem' }}
+                />
+              </div>
+
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                <div className="form-group">
+                  <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>SRM Email ID *</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    placeholder="e.g., rohan_v@srmist.edu.in"
+                    value={sellerEmail}
+                    onChange={(e) => setSellerEmail(e.target.value)}
+                    required
+                    style={{ borderRadius: '10px', padding: '0.75rem' }}
+                  />
+                </div>
+
+              <div className="form-group">
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>WhatsApp Phone Number *</label>
+                <input
+                  type="tel"
+                  className="form-control"
+                    placeholder="e.g., +91 9876543210"
+                    value={sellerPhone}
+                    onChange={(e) => setSellerPhone(e.target.value)}
+                    required
+                    style={{ borderRadius: '10px', padding: '0.75rem' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          </div>
+
+          <div className="modal-footer" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem', marginTop: '0.5rem' }}>
+            <button type="button" className="nav-btn nav-btn-secondary" onClick={onClose} style={{ borderRadius: '10px' }}>
+              Cancel
+            </button>
+            <button type="submit" className="nav-btn nav-btn-primary" style={{ borderRadius: '10px' }}>
+              Create Listing
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  );
+}
