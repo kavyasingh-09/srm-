@@ -13,7 +13,7 @@ const PAYMENT_METHODS = [
   { id: 'cash', label: 'Cash on Meetup', icon: <Banknote size={18} />, color: '#f59e0b', apps: [] },
 ];
 
-export default function CartPage({ cartItems, onRemoveFromCart, onClearCart, onViewProduct, onOpenChat }) {
+export default function CartPage({ cartItems = [], onRemoveFromCart, onClearCart, onViewProduct, onOpenChat }) {
   const [step, setStep] = useState('cart'); // cart | checkout | success
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [upiId, setUpiId] = useState('');

@@ -2,11 +2,11 @@ import React from 'react';
 import { Heart, MapPin, CheckCircle, PackageOpen, ShoppingCart } from 'lucide-react';
 
 export default function ListingsGrid({
-  listings,
-  favorites,
+  listings = [],
+  favorites = [],
   onToggleFavorite,
   onViewProduct,
-  cart,
+  cart = [],
   onToggleCart,
   onOpenSellModal
 }) {

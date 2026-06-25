@@ -13,6 +13,16 @@ import ChatModal from './components/ChatModal';
 import { api, getToken, setToken } from './api/client';
 import { Grid, List, Shield, CheckCircle, Trash2, Heart, Award, ShoppingCart, Pencil } from 'lucide-react';
 
+function loadStoredArray(key) {
+  try {
+    const saved = localStorage.getItem(key);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function App() {
   const [listings, setListings] = useState([]);
   const [listingsLoading, setListingsLoading] = useState(true);
@@ -20,15 +30,9 @@ export default function App() {
   const [lostFoundItems, setLostFoundItems] = useState([]);
   const [lostFoundLoading, setLostFoundLoading] = useState(false);
 
-  const [favorites, setFavorites] = useState(() => {
-    const saved = localStorage.getItem('srm_favorites');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [favorites, setFavorites] = useState(() => loadStoredArray('srm_favorites'));
 
-  const [cart, setCart] = useState(() => {
-    const saved = localStorage.getItem('srm_cart');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [cart, setCart] = useState(() => loadStoredArray('srm_cart'));
 
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('srm_dark_mode');
@@ -56,10 +60,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
 
-  const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem('srm_notifications');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [notifications, setNotifications] = useState(() => loadStoredArray('srm_notifications'));
 
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -73,8 +74,8 @@ export default function App() {
     async function loadListings() {
       setListingsLoading(true);
       try {
-        const { listings: items } = await api.getListings();
-        setListings(items);
+        const data = await api.getListings();
+        setListings(Array.isArray(data?.listings) ? data.listings : []);
       } catch (err) {
         console.error('Failed to load listings:', err);
       } finally {
@@ -90,8 +91,8 @@ export default function App() {
     async function loadLostFound() {
       setLostFoundLoading(true);
       try {
-        const { items } = await api.getLostFound();
-        setLostFoundItems(items);
+        const data = await api.getLostFound();
+        setLostFoundItems(Array.isArray(data?.items) ? data.items : []);
       } catch (err) {
         console.error('Failed to load lost & found:', err);
       } finally {
@@ -300,11 +301,12 @@ export default function App() {
 
   // Filter listings
   const filteredListings = listings.filter((item) => {
+    const search = searchTerm.toLowerCase();
     const matchesSearch = 
-      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.hostel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.courseCode && item.courseCode.toLowerCase().includes(searchTerm.toLowerCase()));
+      (item.title?.toLowerCase() || '').includes(search) ||
+      (item.description?.toLowerCase() || '').includes(search) ||
+      (item.hostel?.toLowerCase() || '').includes(search) ||
+      (item.courseCode?.toLowerCase() || '').includes(search);
       
     const matchesCategory = 
       selectedCategory === 'All Categories' || 

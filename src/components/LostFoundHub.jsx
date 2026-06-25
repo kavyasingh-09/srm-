@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Search, MapPin, Calendar, PlusCircle, FileText, User, Mail, Info, CheckCircle2, ShieldCheck, Pencil, Trash2 } from 'lucide-react';
 import { srmCampuses } from '../data/mockData';
 
-export default function LostFoundHub({ items, onCreateReport, onUpdateReport, onDeleteReport, loading = false, userProfile, isLoggedIn = false, onLoginRequired }) {
+export default function LostFoundHub({ items = [], onCreateReport, onUpdateReport, onDeleteReport, loading = false, userProfile, isLoggedIn = false, onLoginRequired }) {
   const [activeTab, setActiveTab] = useState('All');
   const [selectedCampus, setSelectedCampus] = useState('All');
   const [showReportForm, setShowReportForm] = useState(false);
@@ -95,13 +95,15 @@ export default function LostFoundHub({ items, onCreateReport, onUpdateReport, on
 
   const isOwnReport = (item) => userProfile?.id && item.userId === userProfile.id;
 
-  const filteredItems = items.filter((item) => {
+  const safeItems = Array.isArray(items) ? items : [];
+  const filteredItems = safeItems.filter((item) => {
+    const search = searchTerm.toLowerCase();
     const matchesTab = activeTab === 'All' || item.type === activeTab;
     const matchesCampus = selectedCampus === 'All' || item.campus === selectedCampus;
     const matchesSearch =
-      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (item.title?.toLowerCase() || '').includes(search) ||
+      (item.location?.toLowerCase() || '').includes(search) ||
+      (item.description?.toLowerCase() || '').includes(search);
     return matchesTab && matchesCampus && matchesSearch;
   });
 

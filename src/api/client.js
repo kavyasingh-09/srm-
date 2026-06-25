@@ -61,7 +61,9 @@ export const api = {
   },
 
   getLostFound() {
-    return request('/lost-found');
+    return request('/lost-found').then((data) => ({
+      items: Array.isArray(data?.items) ? data.items : [],
+    }));
   },
 
   createLostFound(body) {
@@ -77,7 +79,9 @@ export const api = {
   },
 
   getListings() {
-    return request('/listings');
+    return request('/listings').then((data) => ({
+      listings: Array.isArray(data?.listings) ? data.listings : [],
+    }));
   },
 
   createListing(body) {
