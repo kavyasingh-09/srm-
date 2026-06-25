@@ -8,7 +8,7 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
   if (!isOpen) return null;
 
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState(categories[1] || 'Textbooks');
+  const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
   const [tradeType, setTradeType] = useState('Sell');
   const [condition, setCondition] = useState('Like New');
@@ -17,8 +17,12 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
   const [hostel, setHostel] = useState('');
   const [customImageUrl, setCustomImageUrl] = useState('');
   const [uploadedImage, setUploadedImage] = useState('');
+  const [uploadedFileName, setUploadedFileName] = useState('');
+  const [uploadedFileUrl, setUploadedFileUrl] = useState('');
   const uploadInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  
+  const defaultPaperThumbnail = 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&auto=format&fit=crop&q=60';
   
   // Feature 1 & 2 states
   const [courseCode, setCourseCode] = useState('');
@@ -54,6 +58,14 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
     }
   }, [campus]);
 
+  // Clear CT Test Papers file upload state when changing away from that category
+  useEffect(() => {
+    if (category !== 'CT Test Papers') {
+      setUploadedFileName('');
+      setUploadedFileUrl('');
+    }
+  }, [category]);
+
   // Run scam detection when key fields change
   useEffect(() => {
     if (title && description && category) {
@@ -70,36 +82,68 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
     reader.onload = () => {
       setUploadedImage(String(reader.result || ''));
       setCustomImageUrl('');
+      setUploadedFileName('');
+      setUploadedFileUrl('');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileUpload = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setUploadedFileUrl(String(reader.result || ''));
+      setUploadedFileName(file.name);
+      setUploadedImage('');
+      setCustomImageUrl('');
     };
     reader.readAsDataURL(file);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!title || !description || !sellerName || !sellerEmail || !sellerPhone) {
-      alert("Please fill in all required fields!");
-      return;
+    const isCTPaper = category === 'CT Test Papers';
+    
+    if (isCTPaper) {
+      if (!description || !uploadedFileUrl) {
+        alert("Please fill in all required fields and upload a CT test paper file!");
+        return;
+      }
+    } else {
+      if (!title || !description) {
+        alert("Please fill in all required fields!");
+        return;
+      }
     }
 
-    const finalImage = uploadedImage || customImageUrl.trim();
+    const finalImage = uploadedImage || customImageUrl.trim() || (category === 'CT Test Papers' ? defaultPaperThumbnail : '');
+    const finalTitle = isCTPaper ? `CT Test Paper - ${new Date().toLocaleDateString()}` : title;
+
+    const listingTradeType = isCTPaper ? 'Free' : tradeType;
+    const listingPrice = isCTPaper ? 0 : (tradeType === 'Free' ? 0 : Number(price) || 0);
+    const sellerEmailValue = sellerEmail || userProfile?.email || '';
+    const sellerNameValue = sellerName || userProfile?.name || 'SRM Student';
+    const sellerPhoneValue = sellerPhone || userProfile?.phone || '';
 
     const newListing = {
-      title,
+      title: finalTitle,
       category,
-      price: tradeType === 'Free' ? 0 : Number(price) || 0,
-      tradeType,
-      condition,
+      price: listingPrice,
+      tradeType: listingTradeType,
+      condition: isCTPaper ? 'Like New' : condition,
       description,
-      campus,
-      hostel,
+      campus: isCTPaper ? (userProfile?.campus || campus) : campus,
+      hostel: isCTPaper ? (userProfile?.hostel || hostel) : hostel,
       courseCode: courseCode.trim().toUpperCase(),
       image: finalImage,
+      fileUrl: uploadedFileUrl || '',
+      fileName: uploadedFileName || '',
       seller: {
-        name: sellerName,
-        email: sellerEmail,
-        phone: sellerPhone,
-        verified: sellerEmail.toLowerCase().endsWith('@srmist.edu.in'),
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sellerName)}`
+        name: sellerNameValue,
+        email: sellerEmailValue,
+        phone: sellerPhoneValue,
+        verified: sellerEmailValue.toLowerCase().endsWith('@srmist.edu.in'),
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sellerNameValue)}`
       }
     };
 
@@ -134,21 +178,23 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
           <div className="modal-body" style={{ maxHeight: '72vh', overflowY: 'auto', padding: '1.5rem 0' }}>
             
             {/* Basic Info */}
-            <div className="form-group">
-              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Item Title *</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g., Casio FX-991EX Calculator, SRM Lab Coat"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                style={{ borderRadius: '10px', padding: '0.75rem' }}
-              />
-            </div>
+            {category !== 'CT Test Papers' && (
+              <div className="form-group">
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Item Title *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g., Casio FX-991EX Calculator, SRM Lab Coat"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  style={{ borderRadius: '10px', padding: '0.75rem' }}
+                />
+              </div>
+            )}
 
-            {/* Course Code Autocomplete (only for Textbooks & Notes) */}
-            {(category === 'Textbooks' || category === 'Notes & Study Materials') && (
+            {/* Course Code Autocomplete (only for CT Test Papers) */}
+            {category === 'CT Test Papers' && (
               <div className="form-group" style={{ position: 'relative', marginBottom: '1.25rem' }}>
                 <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
                   <span>SRM Course Code / Subject (Optional)</span>
@@ -212,97 +258,105 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
               <div className="form-group">
                 <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Category</label>
                 <select className="form-control" value={category} onChange={(e) => setCategory(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  <option value="" disabled>Select category</option>
                   {categories.slice(1).map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
               </div>
 
-              <div className="form-group">
-                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Condition</label>
-                <select className="form-control" value={condition} onChange={(e) => setCondition(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
-                  <option value="New (Sealed)">New (Sealed)</option>
-                  <option value="Like New">Like New</option>
-                  <option value="Good">Good</option>
-                  <option value="Fair">Fair</option>
-                  <option value="Needs repair">Needs repair</option>
-                </select>
-              </div>
+              {category !== 'CT Test Papers' && (
+                <>
+                  <div className="form-group">
+                    <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Condition</label>
+                    <select className="form-control" value={condition} onChange={(e) => setCondition(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                      <option value="New (Sealed)">New (Sealed)</option>
+                      <option value="Like New">Like New</option>
+                      <option value="Good">Good</option>
+                      <option value="Fair">Fair</option>
+                      <option value="Needs repair">Needs repair</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Trade & Pricing */}
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
-              <div className="form-group">
-                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Trade Type</label>
-                <select className="form-control" value={tradeType} onChange={(e) => setTradeType(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
-                  <option value="Sell">Sell / One-time Buy</option>
-                  <option value="Rent">Rent out</option>
-                  <option value="Free">Give Away (Free)</option>
-                </select>
-              </div>
+            {category !== 'CT Test Papers' && (
+              <>
+                {/* Trade & Pricing */}
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+                  <div className="form-group">
+                    <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Trade Type</label>
+                    <select className="form-control" value={tradeType} onChange={(e) => setTradeType(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                      <option value="Sell">Sell / One-time Buy</option>
+                      <option value="Rent">Rent out</option>
+                      <option value="Free">Give Away (Free)</option>
+                    </select>
+                  </div>
 
-              <div className="form-group">
-                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Price (₹) {tradeType === 'Free' ? '(Disabled)' : '*'}</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  placeholder="e.g., 500"
-                  disabled={tradeType === 'Free'}
-                  value={tradeType === 'Free' ? '' : price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required={tradeType !== 'Free'}
-                  style={{ borderRadius: '10px', padding: '0.75rem' }}
-                />
-                
-              </div>
-            </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Price (₹) {tradeType === 'Free' ? '(Disabled)' : '*'}</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="e.g., 500"
+                      disabled={tradeType === 'Free'}
+                      value={tradeType === 'Free' ? '' : price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      required={tradeType !== 'Free'}
+                      style={{ borderRadius: '10px', padding: '0.75rem' }}
+                    />
+                  </div>
+                </div>
 
-            {/* Campus & Hostel Selection */}
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
-              <div className="form-group">
-                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>SRM Campus</label>
-                <select className="form-control" value={campus} onChange={(e) => setCampus(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
-                  {srmCampuses.map((camp) => (
-                    <option key={camp} value={camp}>{camp}</option>
-                  ))}
-                </select>
-              </div>
+                {/* Campus & Hostel Selection */}
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+                  <div className="form-group">
+                    <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>SRM Campus</label>
+                    <select className="form-control" value={campus} onChange={(e) => setCampus(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                      {srmCampuses.map((camp) => (
+                        <option key={camp} value={camp}>{camp}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div className="form-group">
-                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Hostel / Specific Meetup Location *</label>
-                <select className="form-control" value={hostel} onChange={(e) => setHostel(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
-                  {campus === 'Kattankulathur' ? (
-                    <>
-                      <optgroup label="Boys Hostels" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
-                        {srmHostels.Kattankulathur.boys.map((host) => (
-                          <option key={host} value={host}>{host}</option>
-                        ))}
-                      </optgroup>
-                      <optgroup label="Girls Hostels" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
-                        {srmHostels.Kattankulathur.girls.map((host) => (
-                          <option key={host} value={host}>{host}</option>
-                        ))}
-                      </optgroup>
-                    </>
-                  ) : srmHostels[campus] ? (
-                    <>
-                      <optgroup label="Boys Blocks" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
-                        {srmHostels[campus].boys.map((host) => (
-                          <option key={host} value={host}>{host}</option>
-                        ))}
-                      </optgroup>
-                      <optgroup label="Girls Blocks" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
-                        {srmHostels[campus].girls.map((host) => (
-                          <option key={host} value={host}>{host}</option>
-                        ))}
-                      </optgroup>
-                    </>
-                  ) : (
-                    <option value="Main Campus Campus Plaza">Main Campus Plaza</option>
-                  )}
-                </select>
-              </div>
-            </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Hostel / Specific Meetup Location *</label>
+                    <select className="form-control" value={hostel} onChange={(e) => setHostel(e.target.value)} style={{ borderRadius: '10px', padding: '0.75rem', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                      {campus === 'Kattankulathur' ? (
+                        <>
+                          <optgroup label="Boys Hostels" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                            {srmHostels.Kattankulathur.boys.map((host) => (
+                              <option key={host} value={host}>{host}</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Girls Hostels" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                            {srmHostels.Kattankulathur.girls.map((host) => (
+                              <option key={host} value={host}>{host}</option>
+                            ))}
+                          </optgroup>
+                        </>
+                      ) : srmHostels[campus] ? (
+                        <>
+                          <optgroup label="Boys Blocks" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                            {srmHostels[campus].boys.map((host) => (
+                              <option key={host} value={host}>{host}</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Girls Blocks" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                            {srmHostels[campus].girls.map((host) => (
+                              <option key={host} value={host}>{host}</option>
+                            ))}
+                          </optgroup>
+                        </>
+                      ) : (
+                        <option value="Main Campus Campus Plaza">Main Campus Plaza</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Preferred Meetup Hotspot (for KTR) */}
             {enableMeetupHotspot && campus === 'Kattankulathur' && (
@@ -320,85 +374,86 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
             )}
 
             {/* Image Selection Presets / Custom */}
-            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block' }}>Item Photo</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Paste an image URL (optional)"
-                value={customImageUrl}
-                onChange={(e) => {
-                  setCustomImageUrl(e.target.value);
-                  setUploadedImage('');
-                }}
-                style={{ borderRadius: '10px', padding: '0.75rem' }}
-              />
+            {category !== 'CT Test Papers' && (
+              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block' }}>Item Photo</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Paste an image URL (optional)"
+                  value={customImageUrl}
+                  onChange={(e) => {
+                    setCustomImageUrl(e.target.value);
+                    setUploadedImage('');
+                  }}
+                  style={{ borderRadius: '10px', padding: '0.75rem' }}
+                />
 
-              <div style={{ display: 'flex', gap: 10, marginTop: '0.75rem' }}>
-                <button
-                  type="button"
-                  onClick={() => uploadInputRef.current && uploadInputRef.current.click()}
-                  className="nav-btn nav-btn-secondary"
-                  style={{ borderRadius: 10, padding: '0.6rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}
-                >
-                  <Upload size={14} />
-                  Upload from device
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => cameraInputRef.current && cameraInputRef.current.click()}
-                  className="nav-btn nav-btn-secondary"
-                  style={{ borderRadius: 10, padding: '0.6rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}
-                >
-                  <Camera size={14} />
-                  Take photo
-                </button>
-              </div>
-
-              {/* Hidden file inputs for device upload and camera capture */}
-              <input
-                ref={(el) => (uploadInputRef.current = el)}
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e.target.files?.[0])}
-                style={{ display: 'none' }}
-              />
-              <input
-                ref={(el) => (cameraInputRef.current = el)}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={(e) => handleImageUpload(e.target.files?.[0])}
-                style={{ display: 'none' }}
-              />
-              {uploadedImage && (
-                <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <img
-                    src={uploadedImage}
-                    alt="Uploaded preview"
-                    style={{ width: '88px', height: '88px', objectFit: 'cover', borderRadius: '14px', border: '1px solid var(--glass-border)' }}
-                  />
+                <div style={{ display: 'flex', gap: 10, marginTop: '0.75rem' }}>
                   <button
                     type="button"
-                    onClick={() => setUploadedImage('')}
-                    style={{
-                      border: '1px solid var(--glass-border)',
-                      background: 'transparent',
-                      borderRadius: '10px',
-                      padding: '0.6rem 0.9rem',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                      cursor: 'pointer'
-                    }}
+                    onClick={() => uploadInputRef.current && uploadInputRef.current.click()}
+                    className="nav-btn nav-btn-secondary"
+                    style={{ borderRadius: 10, padding: '0.6rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}
                   >
                     <Upload size={14} />
-                    Remove photo
+                    Upload from device
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current && cameraInputRef.current.click()}
+                    className="nav-btn nav-btn-secondary"
+                    style={{ borderRadius: 10, padding: '0.6rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                  >
+                    <Camera size={14} />
+                    Take photo
                   </button>
                 </div>
-              )}
-            </div>
+
+                <input
+                  ref={(el) => (uploadInputRef.current = el)}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                  style={{ display: 'none' }}
+                />
+                <input
+                  ref={(el) => (cameraInputRef.current = el)}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                  style={{ display: 'none' }}
+                />
+                {uploadedImage && (
+                  <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <img
+                      src={uploadedImage}
+                      alt="Uploaded preview"
+                      style={{ width: '88px', height: '88px', objectFit: 'cover', borderRadius: '14px', border: '1px solid var(--glass-border)' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setUploadedImage('')}
+                      style={{
+                        border: '1px solid var(--glass-border)',
+                        background: 'transparent',
+                        borderRadius: '10px',
+                        padding: '0.6rem 0.9rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Upload size={14} />
+                      Remove photo
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Description */}
             <div className="form-group" style={{ marginBottom: '1.25rem' }}>
@@ -412,6 +467,58 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
                 required
               />
             </div>
+
+            {/* CT Test Paper Upload (at the end) */}
+            {category === 'CT Test Papers' && (
+              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block' }}>Upload CT Test Paper *</label>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => uploadInputRef.current && uploadInputRef.current.click()}
+                    className="nav-btn nav-btn-secondary"
+                    style={{ borderRadius: 10, padding: '0.6rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                  >
+                    <Upload size={14} />
+                    Upload paper file
+                  </button>
+                </div>
+                <input
+                  ref={(el) => (uploadInputRef.current = el)}
+                  type="file"
+                  accept="application/pdf,.pdf,.doc,.docx,.ppt,.pptx"
+                  onChange={(e) => handleFileUpload(e.target.files?.[0])}
+                  style={{ display: 'none' }}
+                />
+                {uploadedFileName && (
+                  <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ padding: '0.75rem 0.9rem', borderRadius: '14px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.04)' }}>
+                      <strong>File:</strong> {uploadedFileName}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUploadedFileName('');
+                        setUploadedFileUrl('');
+                      }}
+                      style={{
+                        border: '1px solid var(--glass-border)',
+                        background: 'transparent',
+                        borderRadius: '10px',
+                        padding: '0.6rem 0.9rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Upload size={14} />
+                      Remove file
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ── AI Scam Detection ── */}
             {scamResult && (
@@ -439,53 +546,57 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
               </div>
             )}
 
-            {/* Seller Contact Info */}
-            <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem', marginTop: '1.5rem' }}>
-              <h4 style={{ fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '1rem', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
-                Seller Information Check
-              </h4>
-              
-              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Your Name *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="e.g., Rohan Verma"
-                  value={sellerName}
-                  onChange={(e) => setSellerName(e.target.value)}
-                  required
-                  style={{ borderRadius: '10px', padding: '0.75rem' }}
-                />
-              </div>
+            {category !== 'CT Test Papers' && (
+              <>
+                {/* Seller Contact Info */}
+                <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem', marginTop: '1.5rem' }}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '1rem', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
+                    Seller Information Check
+                  </h4>
+                  
+                  <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                    <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>Your Name *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g., Rohan Verma"
+                      value={sellerName}
+                      onChange={(e) => setSellerName(e.target.value)}
+                      required
+                      style={{ borderRadius: '10px', padding: '0.75rem' }}
+                    />
+                  </div>
 
-              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
-                <div className="form-group">
-                  <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>SRM Email ID *</label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    placeholder="e.g., rohan_v@srmist.edu.in"
-                    value={sellerEmail}
-                    onChange={(e) => setSellerEmail(e.target.value)}
-                    required
-                    style={{ borderRadius: '10px', padding: '0.75rem' }}
-                  />
+                  <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                    <div className="form-group">
+                      <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>SRM Email ID *</label>
+                      <input
+                        type="email"
+                        className="form-control"
+                        placeholder="e.g., rohan_v@srmist.edu.in"
+                        value={sellerEmail}
+                        onChange={(e) => setSellerEmail(e.target.value)}
+                        required
+                        style={{ borderRadius: '10px', padding: '0.75rem' }}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>WhatsApp Phone Number *</label>
+                      <input
+                        type="tel"
+                        className="form-control"
+                        placeholder="e.g., +91 9876543210"
+                        value={sellerPhone}
+                        onChange={(e) => setSellerPhone(e.target.value)}
+                        required
+                        style={{ borderRadius: '10px', padding: '0.75rem' }}
+                      />
+                    </div>
+                  </div>
                 </div>
-
-              <div className="form-group">
-                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>WhatsApp Phone Number *</label>
-                <input
-                  type="tel"
-                  className="form-control"
-                    placeholder="e.g., +91 9876543210"
-                    value={sellerPhone}
-                    onChange={(e) => setSellerPhone(e.target.value)}
-                    required
-                    style={{ borderRadius: '10px', padding: '0.75rem' }}
-                />
-              </div>
-            </div>
-          </div>
+              </>
+            )}
 
           </div>
 

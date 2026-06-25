@@ -45,8 +45,8 @@ export const initialListings = [
   },
   {
     id: "lst-note-3",
-    title: "Transforms and PDE Formula Sheet & Solved Practice Problems",
-    category: "Notes & Study Materials",
+    title: "CT Test Paper Pack: Transforms & PDE",
+    category: "CT Test Papers",
     campus: "Kattankulathur",
     hostel: "Oori Hostel",
     courseCode: "21MAB201T",
@@ -54,7 +54,7 @@ export const initialListings = [
     price: 0,
     tradeType: "Free",
     condition: "New (Sealed)",
-    description: "A compact PDF guide containing all formulas for Fourier Series, Fourier Transforms, Laplace, Z-Transforms, and Partial Differential Equations. Prepared for 3rd semester maths end-sem.",
+    description: "A set of CT test papers and solved answer sheets for Fourier Series, Fourier Transforms, Laplace, Z-Transforms, and Partial Differential Equations. Ideal for end-sem preparation.",
     image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=600&auto=format&fit=crop&q=60",
     seller: {
       name: "Meera Nair",
@@ -67,8 +67,8 @@ export const initialListings = [
   },
   {
     id: "lst-note-4",
-    title: "Compiler Design Unit 1-5 Lecture Notes & PYQs Solved",
-    category: "Notes & Study Materials",
+    title: "CT Test Papers: Compiler Design (Units 1-5)",
+    category: "CT Test Papers",
     campus: "Kattankulathur",
     hostel: "Kaari Hostel",
     courseCode: "21CSC303J",
@@ -76,7 +76,7 @@ export const initialListings = [
     price: 50,
     tradeType: "Sell",
     condition: "Like New",
-    description: "Verified lecture notes for Compiler Design (21CSC302J). Includes lexical analysis, parsing tables (LL/LR), syntax directed translation, code optimization, and code generation unit notes.",
+    description: "A bundle of CT test papers and solved model answers for Compiler Design. Covers lexical analysis, parsing, syntax directed translation, and code generation.",
     image: "https://images.unsplash.com/photo-1517842645767-c639042777db?w=600&auto=format&fit=crop&q=60",
     seller: {
       name: "Rohit Sharma",
@@ -194,8 +194,8 @@ export const initialListings = [
   },
   {
     id: "lst-note-1",
-    title: "DSA Complete Unit Notes (Arrays, Trees, Graphs)",
-    category: "Notes & Study Materials",
+    title: "DSA CT Test Papers (Arrays, Trees, Graphs)",
+    category: "CT Test Papers",
     campus: "Kattankulathur",
     hostel: "Paari Hostel",
     price: 0,
@@ -214,14 +214,14 @@ export const initialListings = [
   },
   {
     id: "lst-note-2",
-    title: "Operating Systems PYQs with Solutions (2021-2025)",
-    category: "Notes & Study Materials",
+    title: "CT Test Papers: Operating Systems PYQs (2021-2025)",
+    category: "CT Test Papers",
     campus: "Kattankulathur",
     hostel: "Kalpana Chawla Hostel",
     price: 80,
     tradeType: "Sell",
     condition: "Good",
-    description: "End-semester question papers with verified solutions compiled from senior reference materials. Covers CPU Scheduling, Deadlocks, Memory Management, and File Systems.",
+    description: "End-semester CT test papers with verified solutions compiled from senior reference materials. Covers CPU Scheduling, Deadlocks, Memory Management, and File Systems.",
     image: "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=600&auto=format&fit=crop&q=60",
     seller: {
       name: "Priya Murthy",
@@ -944,8 +944,7 @@ export const srmHostels = {
 
 export const categories = [
   "All Categories",
-  "Textbooks",
-  "Notes & Study Materials",
+  "CT Test Papers",
   "Projects",
   "Electronics",
   "Bicycles & Transport",
