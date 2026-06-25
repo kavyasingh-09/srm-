@@ -1,41 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { srmCampuses, srmHostels, categories, initialListings, initialLostFound } from './data/mockData';
+import { srmCampuses, srmHostels, categories } from './data/mockData';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import ListingsGrid from './components/ListingsGrid';
 import CreateListingModal from './components/CreateListingModal';
 import ProductDetailModal from './components/ProductDetailModal';
 import LostFoundHub from './components/LostFoundHub';
-import LoginScreen from './components/LoginScreen';
+import AuthScreen from './components/AuthScreen';
 import CartPage from './components/CartPage';
 
 import ChatModal from './components/ChatModal';
-import { Grid, List, Shield, CheckCircle, Trash2, Heart, Award, ShoppingCart } from 'lucide-react';
-
-const demoListingTitles = new Set(initialListings.map(item => item.title));
-const demoLostFoundTitles = new Set(initialLostFound.map(item => item.title));
-
-const parseSavedArray = (key) => {
-  try {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-};
-
-const stripDemoItems = (items, demoTitles) =>
-  Array.isArray(items) ? items.filter(item => !demoTitles.has(item?.title)) : [];
+import { api, getToken, setToken } from './api/client';
+import { Grid, List, Shield, CheckCircle, Trash2, Heart, Award, ShoppingCart, Pencil } from 'lucide-react';
 
 export default function App() {
-  // Load State from LocalStorage or Defaults
-  const [listings, setListings] = useState(() => {
-    return stripDemoItems(parseSavedArray('srm_listings_v7'), demoListingTitles);
-  });
+  const [listings, setListings] = useState([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
 
-  const [lostFoundItems, setLostFoundItems] = useState(() => {
-    return stripDemoItems(parseSavedArray('srm_lostfound_v6'), demoLostFoundTitles);
-  });
+  const [lostFoundItems, setLostFoundItems] = useState([]);
+  const [lostFoundLoading, setLostFoundLoading] = useState(false);
 
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('srm_favorites');
@@ -64,17 +47,14 @@ export default function App() {
 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [sellModalOpen, setSellModalOpen] = useState(false);
+  const [editingListing, setEditingListing] = useState(null);
   const [activeChatListing, setActiveChatListing] = useState(null);
 
   // User Profile State (dynamic, loaded from local storage)
-  const [userProfile, setUserProfile] = useState(() => {
-    const saved = localStorage.getItem('srm_user_profile');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [userProfile, setUserProfile] = useState(null);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('srm_is_logged_in') === 'true';
-  });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
 
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('srm_notifications');
@@ -88,27 +68,67 @@ export default function App() {
     setSelectedHostel('All Hostels');
   }, [selectedCampus]);
 
-  // Sync state to local storage
+  // Load shared listings from API (visible to everyone)
   useEffect(() => {
-    localStorage.setItem('srm_listings_v7', JSON.stringify(listings));
-  }, [listings]);
-
-  useEffect(() => {
-    localStorage.setItem('srm_lostfound_v6', JSON.stringify(lostFoundItems));
-  }, [lostFoundItems]);
-
-  useEffect(() => {
-    const storedListings = parseSavedArray('srm_listings_v7');
-    const cleanedListings = stripDemoItems(storedListings, demoListingTitles);
-    if (cleanedListings.length !== storedListings.length) {
-      localStorage.setItem('srm_listings_v7', JSON.stringify(cleanedListings));
+    async function loadListings() {
+      setListingsLoading(true);
+      try {
+        const { listings: items } = await api.getListings();
+        setListings(items);
+      } catch (err) {
+        console.error('Failed to load listings:', err);
+      } finally {
+        setListingsLoading(false);
+      }
     }
 
-    const storedLostFound = parseSavedArray('srm_lostfound_v6');
-    const cleanedLostFound = stripDemoItems(storedLostFound, demoLostFoundTitles);
-    if (cleanedLostFound.length !== storedLostFound.length) {
-      localStorage.setItem('srm_lostfound_v6', JSON.stringify(cleanedLostFound));
+    loadListings();
+  }, []);
+
+  // Load lost & found from PostgreSQL (visible to everyone)
+  useEffect(() => {
+    async function loadLostFound() {
+      setLostFoundLoading(true);
+      try {
+        const { items } = await api.getLostFound();
+        setLostFoundItems(items);
+      } catch (err) {
+        console.error('Failed to load lost & found:', err);
+      } finally {
+        setLostFoundLoading(false);
+      }
     }
+
+    loadLostFound();
+  }, []);
+
+  // Restore session from JWT on load
+  useEffect(() => {
+    async function restoreSession() {
+      const token = getToken();
+      if (!token) {
+        setAuthChecking(false);
+        return;
+      }
+
+      try {
+        const { user } = await api.me();
+        setUserProfile(user);
+        setIsLoggedIn(true);
+        localStorage.setItem('srm_user_profile', JSON.stringify(user));
+        localStorage.setItem('srm_is_logged_in', 'true');
+      } catch {
+        setToken(null);
+        setUserProfile(null);
+        setIsLoggedIn(false);
+        localStorage.removeItem('srm_user_profile');
+        localStorage.setItem('srm_is_logged_in', 'false');
+      } finally {
+        setAuthChecking(false);
+      }
+    }
+
+    restoreSession();
   }, []);
 
   useEffect(() => {
@@ -133,13 +153,40 @@ export default function App() {
   }, [darkMode]);
 
   // Event Handlers
+  const requireLogin = () => {
+    if (!isLoggedIn) {
+      setCurrentView('login');
+      return false;
+    }
+    return true;
+  };
+
+  const handleOpenSellModal = () => {
+    if (!requireLogin()) return;
+    setEditingListing(null);
+    setSellModalOpen(true);
+  };
+
+  const handleOpenEditListing = (listing) => {
+    if (!requireLogin()) return;
+    setEditingListing(listing);
+    setSellModalOpen(true);
+  };
+
+  const handleCloseSellModal = () => {
+    setSellModalOpen(false);
+    setEditingListing(null);
+  };
+
   const handleToggleFavorite = (itemId) => {
+    if (!requireLogin()) return;
     setFavorites(prev =>
       prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
     );
   };
 
   const handleToggleCart = (itemId) => {
+    if (!requireLogin()) return;
     setCart(prev =>
       prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
     );
@@ -153,23 +200,56 @@ export default function App() {
     setCart(prev => prev.filter(id => id !== itemId));
   };
 
-  const handleCreateListing = (newListing) => {
-    const listingWithId = {
-      ...newListing,
-      id: `lst-${Date.now()}`,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setListings([listingWithId, ...listings]);
-    alert("Listing published successfully!");
+  const handleCreateListing = async (newListing) => {
+    try {
+      const { listing } = await api.createListing(newListing);
+      setListings((prev) => [listing, ...prev]);
+      alert('Listing published successfully!');
+    } catch (err) {
+      alert(err.message || 'Failed to publish listing.');
+    }
   };
 
-  const handleCreateLFReport = (newReport) => {
-    const reportWithId = {
-      ...newReport,
-      id: `lf-${Date.now()}`
-    };
-    setLostFoundItems([reportWithId, ...lostFoundItems]);
-    alert("Report added successfully!");
+  const handleUpdateListing = async (listing) => {
+    try {
+      const { listing: updated } = await api.updateListing(listing.id, listing);
+      setListings((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      setSelectedProduct((prev) => (prev?.id === updated.id ? updated : prev));
+      alert('Listing updated successfully!');
+    } catch (err) {
+      alert(err.message || 'Failed to update listing.');
+    }
+  };
+
+  const handleCreateLFReport = async (newReport) => {
+    try {
+      const { item } = await api.createLostFound(newReport);
+      setLostFoundItems((prev) => [item, ...prev]);
+      alert('Report added successfully!');
+    } catch (err) {
+      alert(err.message || 'Failed to submit report.');
+    }
+  };
+
+  const handleUpdateLFReport = async (report) => {
+    try {
+      const { item } = await api.updateLostFound(report.id, report);
+      setLostFoundItems((prev) => prev.map((entry) => (entry.id === item.id ? item : entry)));
+      alert('Report updated successfully!');
+    } catch (err) {
+      alert(err.message || 'Failed to update report.');
+    }
+  };
+
+  const handleDeleteLFReport = async (itemId) => {
+    if (!window.confirm('Are you sure you want to delete this report?')) return;
+
+    try {
+      await api.deleteLostFound(itemId);
+      setLostFoundItems((prev) => prev.filter((item) => item.id !== itemId));
+    } catch (err) {
+      alert(err.message || 'Failed to delete report.');
+    }
   };
 
   const handleLogin = (profileData) => {
@@ -177,22 +257,29 @@ export default function App() {
     setIsLoggedIn(true);
     localStorage.setItem('srm_user_profile', JSON.stringify(profileData));
     localStorage.setItem('srm_is_logged_in', 'true');
+    setCurrentView('browse');
   };
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to log out of SRM Campus Marketplace?")) {
+    if (window.confirm('Are you sure you want to log out of SRM Campus Marketplace?')) {
+      setToken(null);
       setUserProfile(null);
       setIsLoggedIn(false);
       localStorage.removeItem('srm_user_profile');
       localStorage.setItem('srm_is_logged_in', 'false');
-      setCurrentView('browse'); // Reset view
+      setCurrentView('browse');
     }
   };
 
-  const handleDeleteListing = (itemId) => {
-    if (window.confirm("Are you sure you want to delete this listing?")) {
-      setListings(prev => prev.filter(item => item.id !== itemId));
-      setFavorites(prev => prev.filter(id => id !== itemId));
+  const handleDeleteListing = async (itemId) => {
+    if (!window.confirm('Are you sure you want to delete this listing?')) return;
+
+    try {
+      await api.deleteListing(itemId);
+      setListings((prev) => prev.filter((item) => item.id !== itemId));
+      setFavorites((prev) => prev.filter((id) => id !== itemId));
+    } catch (err) {
+      alert(err.message || 'Failed to delete listing.');
     }
   };
 
@@ -251,7 +338,9 @@ export default function App() {
   });
 
   // User's own listings (with null safety check)
-  const userListings = userProfile ? listings.filter(item => item.seller.email === userProfile.email) : [];
+  const userListings = userProfile
+    ? listings.filter((item) => item.userId === userProfile.id || item.seller?.email === userProfile.email)
+    : [];
   // User's favorite listings
   const favoriteListings = listings.filter(item => favorites.includes(item.id));
 
@@ -273,13 +362,18 @@ export default function App() {
         showNotifications={showNotifications}
         setShowNotifications={setShowNotifications}
         onClearNotifications={() => setNotifications([])}
-        onOpenSellModal={() => setSellModalOpen(true)}
+        onOpenSellModal={handleOpenSellModal}
+        onLoginRequired={requireLogin}
       />
 
       {/* Main Page Area */}
       <main className="main-content">
-        {!isLoggedIn ? (
-          <LoginScreen onLogin={handleLogin} />
+        {authChecking ? (
+          <div className="empty-state glass-panel" style={{ padding: '3rem', textAlign: 'center', margin: '2rem auto', maxWidth: '420px' }}>
+            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Checking session…</p>
+          </div>
+        ) : currentView === 'login' ? (
+          <AuthScreen onLogin={handleLogin} onBrowse={() => setCurrentView('browse')} />
         ) : (
           <>
             {currentView === 'browse' && (
@@ -287,7 +381,7 @@ export default function App() {
             {/* Hero Section Banner */}
             <HeroSection 
               setCurrentView={setCurrentView}
-              onOpenSellModal={() => setSellModalOpen(true)}
+              onOpenSellModal={handleOpenSellModal}
             />
 
             {/* Filter Navigation Bar */}
@@ -401,6 +495,11 @@ export default function App() {
 
             {/* Listings Grid */}
             <div className={viewMode === 'list' ? 'listings-list-mode' : ''}>
+              {listingsLoading ? (
+                <div className="empty-state glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
+                  <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Loading listings…</p>
+                </div>
+              ) : (
               <ListingsGrid 
                 listings={sortedListings}
                 favorites={favorites}
@@ -408,8 +507,9 @@ export default function App() {
                 onViewProduct={setSelectedProduct}
                 cart={cart}
                 onToggleCart={handleToggleCart}
-                onOpenSellModal={() => setSellModalOpen(true)}
+                onOpenSellModal={handleOpenSellModal}
               />
+              )}
             </div>
           </>
         )}
@@ -417,22 +517,33 @@ export default function App() {
         {currentView === 'lostfound' && (
           <LostFoundHub 
             items={lostFoundItems}
+            loading={lostFoundLoading}
+            userProfile={userProfile}
+            isLoggedIn={isLoggedIn}
+            onLoginRequired={requireLogin}
             onCreateReport={handleCreateLFReport}
+            onUpdateReport={handleUpdateLFReport}
+            onDeleteReport={handleDeleteLFReport}
           />
         )}
 
         {currentView === 'cart' && (
+          isLoggedIn ? (
           <CartPage
             cartItems={listings.filter(item => cart.includes(item.id))}
             onRemoveFromCart={handleRemoveFromCart}
             onClearCart={handleClearCart}
             onViewProduct={setSelectedProduct}
           />
+          ) : (
+            <AuthScreen onLogin={handleLogin} />
+          )
         )}
 
 
 
         {currentView === 'profile' && (
+          isLoggedIn ? (
           <div className="profile-view">
             {/* Sidebar info */}
             <div className="profile-sidebar glass-panel">
@@ -532,6 +643,14 @@ export default function App() {
                           <img src={item.image} alt={item.title} className="listing-image" />
                           <button 
                             className="fav-btn" 
+                            style={{ color: 'var(--primary-color)', right: '2.5rem' }}
+                            onClick={() => handleOpenEditListing(item)}
+                            title="Edit Listing"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button 
+                            className="fav-btn" 
                             style={{ color: '#ef4444' }}
                             onClick={() => handleDeleteListing(item.id)}
                             title="Delete Listing"
@@ -591,6 +710,9 @@ export default function App() {
               </div>
             </div>
           </div>
+          ) : (
+            <AuthScreen onLogin={handleLogin} />
+          )
         )}
           </>
         )}
@@ -600,10 +722,10 @@ export default function App() {
       {/* Footer Section */}
       <footer className="app-footer glass-panel">
         <div className="footer-links">
-          <a href="#" onClick={(e) => { e.preventDefault(); isLoggedIn && setCurrentView('browse'); }}>Marketplace</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); isLoggedIn && setCurrentView('lostfound'); }}>Lost & Found Hub</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setCurrentView('browse'); }}>Marketplace</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setCurrentView('lostfound'); }}>Lost & Found Hub</a>
 
-          <a href="#" onClick={(e) => { e.preventDefault(); isLoggedIn && setCurrentView('profile'); }}>My Dashboard</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); isLoggedIn ? setCurrentView('profile') : setCurrentView('login'); }}>My Dashboard</a>
           <a href="https://www.srmist.edu.in" target="_blank" rel="noopener noreferrer">SRM IST Website</a>
         </div>
         <p className="footer-text">
@@ -613,9 +735,11 @@ export default function App() {
 
       {/* Modal overlays */}
       <CreateListingModal 
-        isOpen={sellModalOpen}
-        onClose={() => setSellModalOpen(false)}
+        isOpen={sellModalOpen && isLoggedIn}
+        onClose={handleCloseSellModal}
         onSubmitListing={handleCreateListing}
+        onUpdateListing={handleUpdateListing}
+        editingListing={editingListing}
         userProfile={userProfile}
       />
 

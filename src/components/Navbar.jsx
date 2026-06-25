@@ -16,12 +16,20 @@ export default function Navbar({
   notifications = [],
   showNotifications = false,
   setShowNotifications,
-  onClearNotifications
+  onClearNotifications,
+  onLoginRequired
 }) {
+  const goToView = (view) => {
+    if (view === 'profile' || view === 'cart') {
+      if (onLoginRequired && !onLoginRequired()) return;
+    }
+    setCurrentView(view);
+  };
+
   return (
     <nav className="navbar glass-panel">
       {/* Brand Logo */}
-      <div className="nav-brand" onClick={() => isLoggedIn && setCurrentView('browse')}>
+      <div className="nav-brand" onClick={() => setCurrentView('browse')}>
         <div className="brand-logo-container">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -35,7 +43,7 @@ export default function Navbar({
       </div>
 
       {/* Global Search Bar */}
-      {isLoggedIn && currentView === 'browse' && (
+      {currentView === 'browse' && (
         <div className="nav-search">
           <Search size={18} className="search-icon" />
           <input
@@ -49,29 +57,28 @@ export default function Navbar({
 
       {/* Action Controls & Navigation */}
       <div className="nav-actions">
+        <button
+          onClick={() => setCurrentView('browse')}
+          className={`nav-btn nav-btn-secondary ${currentView === 'browse' ? 'active' : ''}`}
+          style={currentView === 'browse' ? { color: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : {}}
+        >
+          Marketplace
+        </button>
+
+        <button
+          onClick={() => setCurrentView('lostfound')}
+          className={`nav-btn nav-btn-secondary ${currentView === 'lostfound' ? 'active' : ''}`}
+          style={currentView === 'lostfound' ? { color: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : {}}
+        >
+          <ShieldAlert size={16} />
+          Lost & Found
+        </button>
+
         {isLoggedIn && (
           <>
-            {/* Navigation Tabs */}
+            {/* Profile */}
             <button
-              onClick={() => setCurrentView('browse')}
-              className={`nav-btn nav-btn-secondary ${currentView === 'browse' ? 'active' : ''}`}
-              style={currentView === 'browse' ? { color: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : {}}
-            >
-              Marketplace
-            </button>
-
-            <button
-              onClick={() => setCurrentView('lostfound')}
-              className={`nav-btn nav-btn-secondary ${currentView === 'lostfound' ? 'active' : ''}`}
-              style={currentView === 'lostfound' ? { color: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : {}}
-            >
-              <ShieldAlert size={16} />
-              Lost & Found
-            </button>
-
-            {/* Favorites count indicator */}
-            <button 
-              onClick={() => setCurrentView('profile')}
+              onClick={() => goToView('profile')}
               className={`nav-btn nav-btn-secondary ${currentView === 'profile' ? 'active' : ''}`}
               style={{ position: 'relative' }}
             >
@@ -202,7 +209,7 @@ export default function Navbar({
 
             {/* Cart Icon Button */}
             <button
-              onClick={() => setCurrentView('cart')}
+              onClick={() => goToView('cart')}
               className={`nav-btn nav-btn-secondary ${currentView === 'cart' ? 'active' : ''}`}
               style={{ position: 'relative', ...(currentView === 'cart' ? { color: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : {}) }}
               title={`My Cart (${cartCount} items)`}
@@ -230,6 +237,17 @@ export default function Navbar({
               )}
             </button>
           </>
+        )}
+
+        {!isLoggedIn && (
+          <button
+            className="nav-btn nav-btn-secondary"
+            onClick={() => setCurrentView('login')}
+            style={{ color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}
+          >
+            <User size={16} />
+            Log In
+          </button>
         )}
 
         {/* Theme Toggle Button */}

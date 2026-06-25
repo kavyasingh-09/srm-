@@ -1,15 +1,7 @@
 import { createServer } from 'vite';
-import react from '@vitejs/plugin-react';
 
 const server = await createServer({
-  root: process.cwd(),
-  configFile: false,
-  plugins: [react()],
-  server: {
-    host: '127.0.0.1',
-    port: 3000,
-    strictPort: false,
-  },
+  configFile: 'vite.config.js',
 });
 
 await server.listen();

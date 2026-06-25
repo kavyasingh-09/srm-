@@ -1,0 +1,70 @@
+-- SRM Campus Marketplace — PostgreSQL schema
+-- Run once: psql -U postgres -d campus_marketplace -f backend/db/schema.sql
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ─── Users (login / signup) ───────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS users (
+  id            SERIAL PRIMARY KEY,
+  email         VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  name          VARCHAR(255) NOT NULL,
+  campus        VARCHAR(100) NOT NULL DEFAULT 'Kattankulathur',
+  hostel        VARCHAR(100),
+  phone         VARCHAR(50),
+  verified      BOOLEAN NOT NULL DEFAULT FALSE,
+  avatar        TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+
+-- ─── Lost & Found reports ─────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS lost_found_reports (
+  id              SERIAL PRIMARY KEY,
+  user_id         INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  title           VARCHAR(255) NOT NULL,
+  type            VARCHAR(10) NOT NULL CHECK (type IN ('Lost', 'Found')),
+  category        VARCHAR(100) NOT NULL,
+  campus          VARCHAR(100) NOT NULL,
+  location        TEXT NOT NULL,
+  description     TEXT NOT NULL,
+  image           TEXT,
+  contact_name    VARCHAR(255) NOT NULL,
+  contact_details TEXT NOT NULL,
+  created_at      DATE NOT NULL DEFAULT CURRENT_DATE
+);
+
+CREATE INDEX IF NOT EXISTS idx_lost_found_type ON lost_found_reports (type);
+CREATE INDEX IF NOT EXISTS idx_lost_found_campus ON lost_found_reports (campus);
+CREATE INDEX IF NOT EXISTS idx_lost_found_created ON lost_found_reports (created_at DESC);
+
+-- ─── Marketplace listings (public read, auth required to post) ─────────────
+CREATE TABLE IF NOT EXISTS listings (
+  id              SERIAL PRIMARY KEY,
+  user_id         INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  title           VARCHAR(255) NOT NULL,
+  category        VARCHAR(100) NOT NULL,
+  price           NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  trade_type      VARCHAR(20) NOT NULL,
+  condition       VARCHAR(50),
+  description     TEXT NOT NULL,
+  campus          VARCHAR(100) NOT NULL,
+  hostel          VARCHAR(100),
+  course_code     VARCHAR(50),
+  image           TEXT,
+  file_url        TEXT,
+  file_name       VARCHAR(255),
+  meetup_hotspot  TEXT,
+  seller_name     VARCHAR(255) NOT NULL,
+  seller_email    VARCHAR(255) NOT NULL,
+  seller_phone    VARCHAR(50),
+  seller_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  seller_avatar   TEXT,
+  created_at      DATE NOT NULL DEFAULT CURRENT_DATE
+);
+
+CREATE INDEX IF NOT EXISTS idx_listings_campus ON listings (campus);
+CREATE INDEX IF NOT EXISTS idx_listings_category ON listings (category);
+CREATE INDEX IF NOT EXISTS idx_listings_created ON listings (created_at DESC);

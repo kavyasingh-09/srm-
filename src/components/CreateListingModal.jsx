@@ -4,8 +4,10 @@ import { srmCampuses, srmHostels, categories, srmMeetupHotspots } from '../data/
 import { allSrmSubjectsList } from '../data/srmSubjects';
 import { detectScam } from '../utils/aiSimulator';
 
-export default function CreateListingModal({ isOpen, onClose, onSubmitListing, userProfile, enableMeetupHotspot = false }) {
+export default function CreateListingModal({ isOpen, onClose, onSubmitListing, onUpdateListing, editingListing = null, userProfile, enableMeetupHotspot = false }) {
   if (!isOpen) return null;
+
+  const isEditing = Boolean(editingListing);
 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
@@ -37,19 +39,48 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
   const [sellerEmail, setSellerEmail] = useState('');
   const [sellerPhone, setSellerPhone] = useState('');
 
-  // Pre-fill seller details from the logged-in user profile
+  // Pre-fill seller details from the logged-in user profile or editing listing
   useEffect(() => {
-    if (userProfile && isOpen) {
+    if (!isOpen) return;
+
+    if (editingListing) {
+      setTitle(editingListing.title || '');
+      setCategory(editingListing.category || '');
+      setPrice(editingListing.price ? String(editingListing.price) : '');
+      setTradeType(editingListing.tradeType || 'Sell');
+      setCondition(editingListing.condition || 'Like New');
+      setDescription(editingListing.description || '');
+      setCampus(editingListing.campus || srmCampuses[0]);
+      setHostel(editingListing.hostel || '');
+      setCourseCode(editingListing.courseCode || '');
+      setMeetupHotspot(editingListing.meetupHotspot || srmMeetupHotspots[0]);
+      setSellerName(editingListing.seller?.name || '');
+      setSellerEmail(editingListing.seller?.email || '');
+      setSellerPhone(editingListing.seller?.phone || '');
+      setUploadedFileUrl(editingListing.fileUrl || '');
+      setUploadedFileName(editingListing.fileName || '');
+      if (editingListing.image?.startsWith('data:')) {
+        setUploadedImage(editingListing.image);
+        setCustomImageUrl('');
+      } else {
+        setUploadedImage('');
+        setCustomImageUrl(editingListing.image || '');
+      }
+      return;
+    }
+
+    if (userProfile) {
       setSellerName(userProfile.name || '');
       setSellerEmail(userProfile.email || '');
       setSellerPhone(userProfile.phone || '');
       setCampus(userProfile.campus || srmCampuses[0]);
       setHostel(userProfile.hostel || '');
     }
-  }, [userProfile, isOpen]);
+  }, [userProfile, isOpen, editingListing]);
 
-  // Dynamically set default hostel when campus changes
+  // Dynamically set default hostel when campus changes (create mode only)
   useEffect(() => {
+    if (isEditing) return;
     if (campus === 'Kattankulathur') {
       setHostel(srmHostels.Kattankulathur.boys[0]);
     } else if (srmHostels[campus]) {
@@ -105,8 +136,9 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
     const isCTPaper = category === 'CT Test Papers';
     
     if (isCTPaper) {
-      if (!description || !uploadedFileUrl) {
-        alert("Please fill in all required fields and upload a CT test paper file!");
+      const existingFile = uploadedFileUrl || editingListing?.fileUrl || '';
+      if (!description || !existingFile) {
+        alert('Please fill in all required fields and upload a CT test paper file!');
         return;
       }
     } else {
@@ -117,7 +149,9 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
     }
 
     const finalImage = uploadedImage || customImageUrl.trim() || (category === 'CT Test Papers' ? defaultPaperThumbnail : '');
-    const finalTitle = isCTPaper ? `CT Test Paper - ${new Date().toLocaleDateString()}` : title;
+    const finalTitle = isCTPaper && !isEditing ? `CT Test Paper - ${new Date().toLocaleDateString()}` : title;
+    const finalFileUrl = uploadedFileUrl || editingListing?.fileUrl || '';
+    const finalFileName = uploadedFileName || editingListing?.fileName || '';
 
     const listingTradeType = isCTPaper ? 'Free' : tradeType;
     const listingPrice = isCTPaper ? 0 : (tradeType === 'Free' ? 0 : Number(price) || 0);
@@ -136,18 +170,23 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
       hostel: isCTPaper ? (userProfile?.hostel || hostel) : hostel,
       courseCode: courseCode.trim().toUpperCase(),
       image: finalImage,
-      fileUrl: uploadedFileUrl || '',
-      fileName: uploadedFileName || '',
+      fileUrl: finalFileUrl,
+      fileName: finalFileName,
+      meetupHotspot: enableMeetupHotspot ? meetupHotspot : editingListing?.meetupHotspot,
       seller: {
         name: sellerNameValue,
         email: sellerEmailValue,
         phone: sellerPhoneValue,
         verified: sellerEmailValue.toLowerCase().endsWith('@srmist.edu.in'),
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sellerNameValue)}`
+        avatar: editingListing?.seller?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sellerNameValue)}`
       }
     };
 
-    onSubmitListing(newListing);
+    if (isEditing) {
+      onUpdateListing({ id: editingListing.id, ...newListing });
+    } else {
+      onSubmitListing(newListing);
+    }
     
     // Reset Form
     setTitle('');
@@ -155,6 +194,8 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
     setDescription('');
     setCustomImageUrl('');
     setUploadedImage('');
+    setUploadedFileName('');
+    setUploadedFileUrl('');
     setSellerName('');
     setSellerEmail('');
     setSellerPhone('');
@@ -168,7 +209,9 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '680px', borderRadius: '24px' }}>
         
         <div className="modal-header" style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.25rem' }}>
-          <h3 style={{ fontSize: '1.4rem', fontWeight: 850, letterSpacing: '-0.5px' }}>List an Item for Trade</h3>
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 850, letterSpacing: '-0.5px' }}>
+            {isEditing ? 'Edit Listing' : 'List an Item for Trade'}
+          </h3>
           <button className="modal-close-btn" onClick={onClose} style={{ borderRadius: '50%', padding: '0.4rem' }}>
             <X size={20} />
           </button>
@@ -605,7 +648,7 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, u
               Cancel
             </button>
             <button type="submit" className="nav-btn nav-btn-primary" style={{ borderRadius: '10px' }}>
-              Create Listing
+              {isEditing ? 'Save Changes' : 'Create Listing'}
             </button>
           </div>
         </form>

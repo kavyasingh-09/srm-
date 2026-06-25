@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { Search, MapPin, Calendar, PlusCircle, FileText, User, Mail, Info, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Search, MapPin, Calendar, PlusCircle, FileText, User, Mail, Info, CheckCircle2, ShieldCheck, Pencil, Trash2 } from 'lucide-react';
 import { srmCampuses } from '../data/mockData';
 
-export default function LostFoundHub({ items, onCreateReport }) {
+export default function LostFoundHub({ items, onCreateReport, onUpdateReport, onDeleteReport, loading = false, userProfile, isLoggedIn = false, onLoginRequired }) {
   const [activeTab, setActiveTab] = useState('All');
   const [selectedCampus, setSelectedCampus] = useState('All');
   const [showReportForm, setShowReportForm] = useState(false);
+  const [editingReport, setEditingReport] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   const [title, setTitle] = useState('');
@@ -18,8 +19,81 @@ export default function LostFoundHub({ items, onCreateReport }) {
   const [contactDetails, setContactDetails] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [uploadedImage, setUploadedImage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const uploadInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+
+  React.useEffect(() => {
+    if (!showReportForm) {
+      setEditingReport(null);
+      return;
+    }
+
+    if (editingReport) {
+      setTitle(editingReport.title || '');
+      setType(editingReport.type || 'Lost');
+      setCategory(editingReport.category || 'Documents & Cards');
+      setCampus(editingReport.campus || srmCampuses[0]);
+      setLocation(editingReport.location || '');
+      setDescription(editingReport.description || '');
+      setContactName(editingReport.contactName || '');
+      setContactDetails(editingReport.contactDetails || '');
+      setImageUrl(editingReport.image?.startsWith('http') ? editingReport.image : '');
+      setUploadedImage(editingReport.image?.startsWith('data:') ? editingReport.image : '');
+      return;
+    }
+
+    if (userProfile) {
+      setContactName(userProfile.name || '');
+      const details = [userProfile.email, userProfile.phone].filter(Boolean).join(' / ');
+      setContactDetails(details);
+    }
+  }, [userProfile, showReportForm, editingReport]);
+
+  const resetReportForm = () => {
+    setTitle('');
+    setLocation('');
+    setDescription('');
+    setContactName('');
+    setContactDetails('');
+    setImageUrl('');
+    setUploadedImage('');
+    setEditingReport(null);
+    setShowReportForm(false);
+  };
+
+  const handleOpenCreateForm = () => {
+    if (!isLoggedIn) {
+      onLoginRequired?.();
+      return;
+    }
+    setTitle('');
+    setType('Lost');
+    setCategory('Documents & Cards');
+    setCampus(srmCampuses[0]);
+    setLocation('');
+    setDescription('');
+    setImageUrl('');
+    setUploadedImage('');
+    setEditingReport(null);
+    setShowReportForm(true);
+  };
+
+  const handleOpenEditForm = (item) => {
+    if (!isLoggedIn) {
+      onLoginRequired?.();
+      return;
+    }
+    setEditingReport(item);
+    setShowReportForm(true);
+  };
+
+  const handleDeleteReport = async (item) => {
+    if (!window.confirm('Are you sure you want to delete this report?')) return;
+    await onDeleteReport?.(item.id);
+  };
+
+  const isOwnReport = (item) => userProfile?.id && item.userId === userProfile.id;
 
   const filteredItems = items.filter((item) => {
     const matchesTab = activeTab === 'All' || item.type === activeTab;
@@ -31,7 +105,7 @@ export default function LostFoundHub({ items, onCreateReport }) {
     return matchesTab && matchesCampus && matchesSearch;
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !location || !description || !contactName || !contactDetails) {
       alert('Please fill in all required fields!');
@@ -44,27 +118,30 @@ export default function LostFoundHub({ items, onCreateReport }) {
         ? 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=60'
         : 'https://images.unsplash.com/photo-1578358371354-3e1e754b77f4?w=600&auto=format&fit=crop&q=60');
 
-    onCreateReport({
-      title,
-      type,
-      category,
-      campus,
-      location,
-      description,
-      image: defaultImage,
-      contactName,
-      contactDetails,
-      createdAt: new Date().toISOString().split('T')[0]
-    });
+    setSubmitting(true);
+    try {
+      const payload = {
+        title,
+        type,
+        category,
+        campus,
+        location,
+        description,
+        image: defaultImage,
+        contactName,
+        contactDetails,
+      };
 
-    setTitle('');
-    setLocation('');
-    setDescription('');
-    setContactName('');
-    setContactDetails('');
-    setImageUrl('');
-    setUploadedImage('');
-    setShowReportForm(false);
+      if (editingReport) {
+        await onUpdateReport?.({ id: editingReport.id, ...payload });
+      } else {
+        await onCreateReport(payload);
+      }
+
+      resetReportForm();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleImageUpload = (file) => {
@@ -101,7 +178,7 @@ export default function LostFoundHub({ items, onCreateReport }) {
         </div>
         <button
           className="nav-btn nav-btn-primary"
-          onClick={() => setShowReportForm(!showReportForm)}
+          onClick={() => (showReportForm ? resetReportForm() : handleOpenCreateForm())}
           style={{
             margin: '1rem auto 0',
             padding: '0.75rem 1.5rem',
@@ -121,7 +198,7 @@ export default function LostFoundHub({ items, onCreateReport }) {
       {showReportForm && (
         <div className="glass-panel" style={{ padding: '2.5rem', marginBottom: '3rem', border: '1.5px solid var(--accent-color)', borderRadius: '20px', boxShadow: 'var(--shadow-md)' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.75rem' }}>
-            Submit a Lost/Found Report
+            {editingReport ? 'Edit Lost/Found Report' : 'Submit a Lost/Found Report'}
           </h3>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -241,8 +318,8 @@ export default function LostFoundHub({ items, onCreateReport }) {
               <button type="button" className="nav-btn nav-btn-secondary" onClick={() => setShowReportForm(false)} style={{ borderRadius: '10px' }}>
                 Cancel
               </button>
-              <button type="submit" className="nav-btn nav-btn-primary" style={{ borderRadius: '10px' }}>
-                Submit Report
+              <button type="submit" className="nav-btn nav-btn-primary" style={{ borderRadius: '10px' }} disabled={submitting}>
+                {submitting ? 'Saving…' : (editingReport ? 'Save Changes' : 'Submit Report')}
               </button>
             </div>
           </form>
@@ -283,6 +360,18 @@ export default function LostFoundHub({ items, onCreateReport }) {
       </div>
 
       <div className="listings-grid" style={{ marginTop: '2rem' }}>
+        {loading && (
+          <div className="empty-state glass-panel" style={{ padding: '2rem', gridColumn: '1 / -1', textAlign: 'center' }}>
+            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Loading reports from database…</p>
+          </div>
+        )}
+
+        {!loading && filteredItems.length === 0 && (
+          <div className="empty-state glass-panel" style={{ padding: '2rem', gridColumn: '1 / -1', textAlign: 'center' }}>
+            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>No lost or found reports yet. Be the first to file one!</p>
+          </div>
+        )}
+
         {filteredItems.map((item) => (
           <div
             key={item.id}
@@ -312,6 +401,27 @@ export default function LostFoundHub({ items, onCreateReport }) {
               </div>
 
               <span className="listing-campus-badge">{item.campus === 'Kattankulathur' ? 'KTR' : item.campus}</span>
+
+              {isOwnReport(item) && (
+                <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: '0.35rem' }}>
+                  <button
+                    className="fav-btn"
+                    style={{ position: 'static', color: 'var(--primary-color)' }}
+                    onClick={() => handleOpenEditForm(item)}
+                    title="Edit report"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    className="fav-btn"
+                    style={{ position: 'static', color: '#ef4444' }}
+                    onClick={() => handleDeleteReport(item)}
+                    title="Delete report"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="listing-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

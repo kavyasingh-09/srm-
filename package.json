@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/local-preview.mjs",
+    "dev:api": "npm run dev --prefix backend",
     "build": "node scripts/local-build.mjs",
     "preview": "vite preview"
   },
