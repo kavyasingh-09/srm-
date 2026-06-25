@@ -11,14 +11,20 @@ dotenv.config({ override: true });
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const isLocalDevOrigin = (origin) =>
-  !origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+const isAllowedOrigin = (origin) => {
+  // Allow same-origin requests (no origin header) and localhost in dev
+  if (!origin) return true;
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+  // Allow any vercel.app subdomain (preview and production deployments)
+  if (/^https:\/\/[a-zA-Z0-9-]+(\.vercel\.app)$/.test(origin)) return true;
+  // Allow explicit CLIENT_ORIGIN env var
+  if (process.env.CLIENT_ORIGIN && origin === process.env.CLIENT_ORIGIN) return true;
+  return false;
+};
 
 app.use(cors({
   origin(origin, callback) {
-    if (isLocalDevOrigin(origin)) {
-      callback(null, true);
-    } else if (process.env.CLIENT_ORIGIN && origin === process.env.CLIENT_ORIGIN) {
+    if (isAllowedOrigin(origin)) {
       callback(null, true);
     } else {
       callback(new Error(`CORS blocked origin: ${origin}`));
