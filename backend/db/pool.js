@@ -1,3 +1,4 @@
+// Database connection pool setup
 import pg from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
