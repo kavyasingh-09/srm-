@@ -6,7 +6,7 @@ import authRoutes from './routes/auth.js';
 import lostFoundRoutes from './routes/lostFound.js';
 import listingsRoutes from './routes/listings.js';
 
-dotenv.config();
+dotenv.config({ override: true });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,6 +28,24 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
+let dbInitialized = false;
+
+app.use(async (req, res, next) => {
+  if (!dbInitialized) {
+    try {
+      if (!process.env.DATABASE_URL) {
+        throw new Error('DATABASE_URL is not set.');
+      }
+      await initDatabase();
+      dbInitialized = true;
+    } catch (err) {
+      console.error('Database initialization failed:', err.message);
+      return res.status(500).json({ error: `Database initialization failed: ${err.message}` });
+    }
+  }
+  next();
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'campus-marketplace-api' });
 });
@@ -44,6 +62,7 @@ async function start() {
 
   try {
     await initDatabase();
+    dbInitialized = true;
   } catch (err) {
     console.error('Database initialization failed:', err.message);
     process.exit(1);
@@ -54,4 +73,9 @@ async function start() {
   });
 }
 
-start();
+export default app;
+
+if (!process.env.VERCEL) {
+  start();
+}
+
