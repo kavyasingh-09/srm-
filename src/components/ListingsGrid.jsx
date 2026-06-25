@@ -36,7 +36,12 @@ export default function ListingsGrid({
         const inCart = cart && cart.includes(item.id);
 
         return (
-          <div key={item.id} className="listing-card">
+          <div
+            key={item.id}
+            className="listing-card"
+            style={{ cursor: 'pointer' }}
+            onClick={() => onViewProduct && onViewProduct(item)}
+          >
             {/* Image & Badges */}
             <div className="listing-image-container">
               <img
