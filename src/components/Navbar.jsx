@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Sun, Moon, PlusCircle, Heart, ShieldAlert, User, ShoppingCart } from 'lucide-react';
+import { Search, Sun, Moon, PlusCircle, Heart, ShieldAlert, User, ShoppingCart, Bell } from 'lucide-react';
 
 export default function Navbar({
   isLoggedIn,
@@ -11,7 +11,12 @@ export default function Navbar({
   setDarkMode,
   favoritesCount,
   onOpenSellModal,
-  cartCount
+  cartCount,
+  notificationsCount = 0,
+  notifications = [],
+  showNotifications = false,
+  setShowNotifications,
+  onClearNotifications
 }) {
   return (
     <nav className="navbar glass-panel">
@@ -90,6 +95,108 @@ export default function Navbar({
                 }}>
                   {favoritesCount}
                 </span>
+              )}
+            </button>
+
+            {/* Notifications Bell */}
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className={`nav-btn nav-btn-secondary`}
+              style={{ position: 'relative' }}
+              title="Notifications"
+            >
+              <Bell size={16} />
+              {notificationsCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  right: '-6px',
+                  background: '#ef4444',
+                  color: 'white',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  minWidth: '18px',
+                  height: '18px',
+                  borderRadius: '9px',
+                  padding: '0 3px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {notificationsCount}
+                </span>
+              )}
+              
+              {/* Notifications Dropdown */}
+              {showNotifications && isLoggedIn && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '0.5rem',
+                  background: 'var(--card-bg)',
+                  border: '1.5px solid var(--glass-border)',
+                  borderRadius: '14px',
+                  boxShadow: 'var(--shadow-lg)',
+                  minWidth: '320px',
+                  maxWidth: '360px',
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  zIndex: 1000,
+                  backdropFilter: 'blur(10px)'
+                }}>
+                  <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800 }}>Interested Buyers</h4>
+                    {notificationsCount > 0 && (
+                      <button
+                        onClick={() => onClearNotifications()}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid var(--glass-border)',
+                          color: 'var(--text-secondary)',
+                          padding: '0.3rem 0.6rem',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                          fontWeight: 600
+                        }}
+                      >
+                        Clear All
+                      </button>
+                    )}
+                  </div>
+                  
+                  {notificationsCount === 0 ? (
+                    <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔔</div>
+                      <p style={{ margin: 0, fontSize: '0.85rem' }}>No interests yet</p>
+                      <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem' }}>You'll get notified when someone shows interest in your listings</p>
+                    </div>
+                  ) : (
+                    <div style={{ padding: '0.5rem' }}>
+                      {notifications.map((notif) => (
+                        <div key={notif.id} style={{
+                          padding: '0.75rem',
+                          borderRadius: '10px',
+                          background: 'rgba(59, 130, 246, 0.05)',
+                          borderLeft: '3px solid var(--primary-color)',
+                          marginBottom: '0.5rem',
+                          fontSize: '0.85rem'
+                        }}>
+                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                            ❤️ {notif.buyerName} is interested
+                          </div>
+                          <div style={{ color: 'var(--text-secondary)', marginTop: '0.25rem', fontSize: '0.8rem' }}>
+                            {notif.itemTitle}
+                          </div>
+                          <div style={{ color: 'var(--text-light)', marginTop: '0.25rem', fontSize: '0.75rem' }}>
+                            {notif.timestamp}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </button>
 

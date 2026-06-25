@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   X, MapPin, Mail, MessageCircle, ShieldCheck, Calendar,
   Lock, Unlock, CreditCard, Smartphone, Building2, Wallet,
-  Banknote, Send, Instagram, Phone
+  Banknote, Send, Instagram, Phone, Heart
 } from 'lucide-react';
 
 // Payment method definitions
@@ -49,13 +49,14 @@ const PAYMENT_METHODS = [
   }
 ];
 
-export default function ProductDetailModal({ product, onClose, onVerifyUserSimulation, onOpenChat }) {
+export default function ProductDetailModal({ product, onClose, onVerifyUserSimulation, onOpenChat, userProfile, onShowInterest }) {
   if (!product) return null;
 
   const [contactRevealed, setContactRevealed] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [payConfirmed, setPayConfirmed] = useState(false);
+  const [interestShown, setInterestShown] = useState(false);
 
   // Reset lock state when switching between products
   useEffect(() => {
@@ -63,6 +64,7 @@ export default function ProductDetailModal({ product, onClose, onVerifyUserSimul
     setIsRequesting(false);
     setSelectedPayment(null);
     setPayConfirmed(false);
+    setInterestShown(false);
   }, [product.id]);
 
   const handleRequestContact = () => {
@@ -76,6 +78,14 @@ export default function ProductDetailModal({ product, onClose, onVerifyUserSimul
   const handleConfirmPayment = () => {
     setPayConfirmed(true);
     setTimeout(() => setPayConfirmed(false), 4000);
+  };
+
+  const handleShowInterest = () => {
+    if (userProfile && onShowInterest) {
+      onShowInterest(product.id, product.title, userProfile.name);
+      setInterestShown(true);
+      setTimeout(() => setInterestShown(false), 2000);
+    }
   };
 
   // Contact message builders
@@ -183,11 +193,33 @@ export default function ProductDetailModal({ product, onClose, onVerifyUserSimul
         `}</style>
 
         {/* Header */}
-        <div className="modal-header" style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.25rem' }}>
-          <h3 style={{ fontSize: '1.4rem', fontWeight: 850, letterSpacing: '-0.5px' }}>Item Details</h3>
-          <button className="modal-close-btn" onClick={onClose} style={{ borderRadius: '50%', padding: '0.4rem' }}>
-            <X size={20} />
-          </button>
+        <div className="modal-header" style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 850, letterSpacing: '-0.5px', margin: 0 }}>Item Details</h3>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button 
+              onClick={handleShowInterest}
+              style={{
+                borderRadius: '50%',
+                padding: '0.4rem',
+                border: '1px solid var(--glass-border)',
+                background: interestShown ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
+                cursor: userProfile ? 'pointer' : 'not-allowed',
+                color: interestShown ? '#ef4444' : 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.3s ease',
+                opacity: userProfile ? 1 : 0.5
+              }}
+              title={userProfile ? 'Show Interest' : 'Login to show interest'}
+              disabled={!userProfile}
+            >
+              <Heart size={20} fill={interestShown ? 'currentColor' : 'none'} />
+            </button>
+            <button className="modal-close-btn" onClick={onClose} style={{ borderRadius: '50%', padding: '0.4rem' }}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -229,7 +261,25 @@ export default function ProductDetailModal({ product, onClose, onVerifyUserSimul
                   Condition: {product.condition}
                 </span>
               </div>
-
+              {product.category === 'CT Test Papers' && product.fileUrl && (
+                <div className="glass-panel" style={{ borderRadius: '16px', padding: '1rem', border: '1px solid var(--glass-border)', marginBottom: '1rem' }}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>CT Test Paper</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 700 }}>{product.fileName || 'Download Paper'}</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-light)' }}>Uploaded by the seller for direct download.</p>
+                    </div>
+                    <a
+                      href={product.fileUrl}
+                      download={product.fileName || 'ct-test-paper'}
+                      className="nav-btn nav-btn-primary"
+                      style={{ borderRadius: '12px', padding: '0.8rem 1rem' }}
+                    >
+                      Download
+                    </a>
+                  </div>
+                </div>
+              )}
               {/* ── PAYMENT OPTIONS PANEL ── */}
               <div className="glass-panel" style={{ borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--glass-border)' }}>
                 <h4 style={{ 

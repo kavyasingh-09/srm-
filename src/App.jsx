@@ -76,6 +76,13 @@ export default function App() {
     return localStorage.getItem('srm_is_logged_in') === 'true';
   });
 
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem('srm_notifications');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [showNotifications, setShowNotifications] = useState(false);
+
   // Reset hostel filter when campus changes
   useEffect(() => {
     setSelectedHostel('All Hostels');
@@ -111,6 +118,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('srm_cart', JSON.stringify(cart));
   }, [cart]);
+
+  useEffect(() => {
+    localStorage.setItem('srm_notifications', JSON.stringify(notifications));
+  }, [notifications]);
 
   useEffect(() => {
     localStorage.setItem('srm_dark_mode', darkMode);
@@ -257,6 +268,11 @@ export default function App() {
         setDarkMode={setDarkMode}
         favoritesCount={favorites.length}
         cartCount={cart.length}
+        notificationsCount={notifications.length}
+        notifications={notifications}
+        showNotifications={showNotifications}
+        setShowNotifications={setShowNotifications}
+        onClearNotifications={() => setNotifications([])}
         onOpenSellModal={() => setSellModalOpen(true)}
       />
 
@@ -609,6 +625,17 @@ export default function App() {
           onClose={() => setSelectedProduct(null)}
           onVerifyUserSimulation={handleSimulateVerification}
           onOpenChat={setActiveChatListing}
+          userProfile={userProfile}
+          onShowInterest={(itemId, itemTitle, buyerName) => {
+            const newNotification = {
+              id: Date.now(),
+              itemId,
+              itemTitle,
+              buyerName,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            setNotifications([newNotification, ...notifications]);
+          }}
         />
       )}
 
