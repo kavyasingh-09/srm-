@@ -40,7 +40,7 @@ export default function App() {
   });
 
   // UI Navigation States
-  const [currentView, setCurrentView] = useState('browse'); // browse, lostfound, profile, cart
+  const [currentView, setCurrentView] = useState('login'); // start on login page
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedCampus, setSelectedCampus] = useState('All Campuses');
@@ -116,6 +116,7 @@ export default function App() {
         const { user } = await api.me();
         setUserProfile(user);
         setIsLoggedIn(true);
+        setCurrentView('browse');
         localStorage.setItem('srm_user_profile', JSON.stringify(user));
         localStorage.setItem('srm_is_logged_in', 'true');
       } catch {
