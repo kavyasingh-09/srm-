@@ -30,24 +30,6 @@ export default function HeroSection({ setCurrentView, onOpenSellModal }) {
           </div>
         </div>
 
-        <div className="hero-cta">
-          <button
-            className="nav-btn nav-btn-primary"
-            onClick={() => setCurrentView('browse')}
-            style={{ padding: '0.8rem 1.6rem', fontSize: '1rem' }}
-          >
-            Browse Listings
-            <ArrowRight size={18} />
-          </button>
-
-          <button
-            className="nav-btn nav-btn-secondary"
-            onClick={onOpenSellModal}
-            style={{ padding: '0.8rem 1.6rem', fontSize: '1rem' }}
-          >
-            List an Item
-          </button>
-        </div>
       </div>
 
       <div className="hero-graphics">
