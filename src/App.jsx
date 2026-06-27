@@ -40,7 +40,7 @@ export default function App() {
   });
 
   // UI Navigation States
-  const [currentView, setCurrentView] = useState('browse'); // browse, lostfound, profile, cart
+  const [currentView, setCurrentView] = useState('login'); // start on login page
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedCampus, setSelectedCampus] = useState('All Campuses');
@@ -375,7 +375,13 @@ export default function App() {
             <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Checking session…</p>
           </div>
         ) : currentView === 'login' ? (
-          <AuthScreen onLogin={handleLogin} onBrowse={() => setCurrentView('browse')} />
+          <AuthScreen 
+            onLogin={handleLogin} 
+            onBrowse={() => setCurrentView('browse')}
+            isLoggedIn={isLoggedIn}
+            userProfile={userProfile}
+            onLogout={handleLogout}
+          />
         ) : (
           <>
             {currentView === 'browse' && (
