@@ -579,6 +579,7 @@ body.dark-theme .hero-text h2 span {
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
+  color-scheme: light;
 }
 
 .filter-select:focus {
@@ -588,6 +589,17 @@ body.dark-theme .hero-text h2 span {
 .filter-select option {
   background: var(--bg-gradient);
   color: var(--text-primary);
+}
+
+body.dark-theme .filter-select {
+  color-scheme: dark;
+  background: rgba(9, 13, 22, 0.92);
+  color: #f8fafc;
+}
+
+body.dark-theme .filter-select option {
+  background-color: #0f172a;
+  color: #f8fafc;
 }
 
 .filters-right {

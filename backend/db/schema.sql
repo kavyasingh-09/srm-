@@ -12,11 +12,14 @@ CREATE TABLE IF NOT EXISTS users (
   campus        VARCHAR(100) NOT NULL DEFAULT 'Kattankulathur',
   hostel        VARCHAR(100),
   phone         VARCHAR(50),
+  gender        VARCHAR(10) DEFAULT 'male',
   verified      BOOLEAN NOT NULL DEFAULT FALSE,
   avatar        TEXT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(10) DEFAULT 'male';
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 
@@ -68,3 +71,36 @@ CREATE TABLE IF NOT EXISTS listings (
 CREATE INDEX IF NOT EXISTS idx_listings_campus ON listings (campus);
 CREATE INDEX IF NOT EXISTS idx_listings_category ON listings (category);
 CREATE INDEX IF NOT EXISTS idx_listings_created ON listings (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title       VARCHAR(255) NOT NULL,
+  message     TEXT NOT NULL,
+  listing_id  TEXT,
+  actor_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  conversation_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  is_read     BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS listing_id TEXT;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS actor_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS conversation_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_listing_id ON notifications (listing_id);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id SERIAL PRIMARY KEY,
+  listing_id TEXT NOT NULL,
+  sender_id INTEGER NOT NULL,
+  receiver_id INTEGER NOT NULL,
+  encrypted_message TEXT NOT NULL,
+  iv TEXT NOT NULL,
+  signature TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_listing_id ON chat_messages (listing_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_participants ON chat_messages (sender_id, receiver_id);

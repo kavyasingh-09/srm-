@@ -75,19 +75,19 @@ CREATE TABLE IF NOT EXISTS notifications (
   user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title       VARCHAR(255) NOT NULL,
   message     TEXT NOT NULL,
+  listing_id  TEXT,
+  actor_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  conversation_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   is_read     BOOLEAN NOT NULL DEFAULT FALSE,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS listing_id TEXT;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS actor_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS conversation_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
 
--- Drop and recreate chat_messages with TEXT listing_id and no FK constraints on participants
--- This allows mock listings (string IDs) and virtual users (id=0) to use the chat
-DO $$
-BEGIN
-  DROP TABLE IF EXISTS chat_messages;
-END
-$$;
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_listing_id ON notifications (listing_id);
 
 CREATE TABLE IF NOT EXISTS chat_messages (
   id SERIAL PRIMARY KEY,

@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { srmMeetupHotspots } from '../data/mockData';
-import { Calendar, Send, Image as ImageIcon, X, MessageCircle, MapPin, Clock, ShieldCheck } from 'lucide-react';
+import { Calendar, ArrowUp, X, MessageCircle, Clock, ShieldCheck, Plus, FileText } from 'lucide-react';
 import { api } from '../api/client';
 import { deriveSharedKey, encryptMessage, decryptMessage } from '../utils/crypto';
 
 export default function ChatModal({ listing, userProfile, onClose }) {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
-  const [previewImg, setPreviewImg] = useState(null);
+  const [previewAttachment, setPreviewAttachment] = useState(null);
   const [sharedKey, setSharedKey] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -15,10 +15,15 @@ export default function ChatModal({ listing, userProfile, onClose }) {
   const fileInputRef = useRef(null);
   const pollIntervalRef = useRef(null);
 
-  // Determine the "other user" ID.
-  // For real DB listings: use seller_id or seller?.id.
-  // For mock listings: use user_id (the owner) or fall back to 0 (representing a virtual "mock seller").
-  const otherUserId = listing.seller_id || listing.seller?.id || listing.user_id || 0;
+  // Determine the "other user" ID. Buyers chat with the listing owner; sellers open a
+  // specific buyer conversation from a message notification/conversation entry.
+  const sellerUserId = listing.userId || listing.seller_id || listing.seller?.id || listing.user_id || 0;
+  const explicitOtherUserId = listing.chatOtherUserId || listing.otherUserId || listing.conversationUserId;
+  const otherUserId = Number(explicitOtherUserId || sellerUserId || 0);
+  const otherUserName = listing.chatOtherUserName
+    || listing.otherUserName
+    || (otherUserId === sellerUserId ? listing.seller?.name : null)
+    || 'Student';
   
   // Use the listing id as a string room key — works for both "lst-4" (mock) and 7 (real DB)
   const listingRoomId = String(listing.id);
@@ -33,7 +38,7 @@ export default function ChatModal({ listing, userProfile, onClose }) {
         console.error("Failed to derive E2EE key:", err);
       }
     }
-    if (userProfile?.id !== undefined && listingRoomId) {
+    if (userProfile?.id !== undefined && listingRoomId && otherUserId) {
       initCrypto();
     }
   }, [listingRoomId, userProfile.id, otherUserId]);
@@ -49,12 +54,14 @@ export default function ChatModal({ listing, userProfile, onClose }) {
             const plaintext = await decryptMessage(msg.encryptedMessage, msg.iv, sharedKey);
             let parsedText = plaintext;
             let parsedImage = null;
+            let parsedAttachment = null;
             
-            // Try to parse JSON in case it contains an image
+            // Try to parse JSON in case it contains an attachment
             try {
               const parsed = JSON.parse(plaintext);
               if (parsed.text !== undefined) parsedText = parsed.text;
               if (parsed.image !== undefined) parsedImage = parsed.image;
+              if (parsed.attachment !== undefined) parsedAttachment = parsed.attachment;
             } catch (e) {
               // It's just plain text
             }
@@ -64,6 +71,7 @@ export default function ChatModal({ listing, userProfile, onClose }) {
               senderId: msg.senderId,
               text: parsedText,
               image: parsedImage,
+              attachment: parsedAttachment,
               time: new Date(msg.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
               isSystem: plaintext.startsWith('📅 Meetup Scheduled!')
             };
@@ -113,12 +121,21 @@ export default function ChatModal({ listing, userProfile, onClose }) {
     return () => window.removeEventListener('keydown', handle);
   }, [onClose]);
 
-  async function sendMessage(textOverride, imgDataUrl) {
+  async function sendMessage(textOverride, attachmentOverride) {
     const text = textOverride || message.trim();
-    if (!text && !imgDataUrl) return;
+    const attachment = attachmentOverride !== undefined ? attachmentOverride : (textOverride ? null : previewAttachment);
+    if (!text && !attachment) return;
+    if (!otherUserId || otherUserId === Number(userProfile.id)) {
+      alert("Open a buyer conversation to reply to this listing.");
+      return;
+    }
     if (!sharedKey) return alert("E2EE Key not ready.");
 
-    const payloadObj = { text, image: imgDataUrl || null };
+    const payloadObj = {
+      text,
+      image: attachment?.isImage ? attachment.dataUrl : null,
+      attachment: attachment || null
+    };
     const plaintext = JSON.stringify(payloadObj);
 
     try {
@@ -129,13 +146,14 @@ export default function ChatModal({ listing, userProfile, onClose }) {
         id: Date.now(),
         senderId: userProfile.id,
         text,
-        image: imgDataUrl,
+        image: attachment?.isImage ? attachment.dataUrl : null,
+        attachment,
         time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
         isSystem: text.startsWith('📅 Meetup')
       };
       setMessages(prev => [...prev, tempMsg]);
       setMessage('');
-      setPreviewImg(null);
+      setPreviewAttachment(null);
 
       await api.sendChatMessage(listingRoomId, otherUserId, { encryptedMessage, iv, signature });
     } catch (err) {
@@ -144,14 +162,21 @@ export default function ChatModal({ listing, userProfile, onClose }) {
     }
   }
 
-  function handleImageUpload(e) {
+  function handleAttachmentUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      setPreviewImg(ev.target.result);
+      setPreviewAttachment({
+        name: file.name || 'Camera photo',
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        dataUrl: ev.target.result,
+        isImage: (file.type || '').startsWith('image/')
+      });
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
   }
 
   function handleKeyDown(e) {
@@ -211,7 +236,7 @@ export default function ChatModal({ listing, userProfile, onClose }) {
               </div>
             </div>
             <div style={{ color: 'var(--primary-color)', fontSize: '0.78rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span>Chatting with {listing.seller?.name || 'Seller'}</span>
+              <span>Chatting with {otherUserName}</span>
               <span>·</span>
               <span>₹{listing.price?.toLocaleString('en-IN')}</span>
             </div>
@@ -278,7 +303,7 @@ export default function ChatModal({ listing, userProfile, onClose }) {
             // Derive avatar letter: for mine use current user's name, for others use seller name or fallback
             const avatarLetter = mine
               ? (userProfile?.name || 'Y').charAt(0).toUpperCase()
-              : (listing.seller?.name || listing.sellerName || 'S').charAt(0).toUpperCase();
+              : (otherUserName || listing.seller?.name || listing.sellerName || 'S').charAt(0).toUpperCase();
             return (
               <div key={msg.id} style={{
                 display: 'flex',
@@ -314,6 +339,30 @@ export default function ChatModal({ listing, userProfile, onClose }) {
                     <img src={msg.image} alt="shared" style={{
                       maxWidth: '100%', borderRadius: 10, border: '1px solid var(--glass-border)', marginBottom: msg.text ? 8 : 0,
                     }} />
+                  )}
+                  {msg.attachment && !msg.attachment.isImage && (
+                    <a
+                      href={msg.attachment.dataUrl}
+                      download={msg.attachment.name || 'attachment'}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        color: '#fff',
+                        textDecoration: 'none',
+                        background: 'rgba(255,255,255,0.08)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 10,
+                        padding: '8px 10px',
+                        marginBottom: msg.text ? 8 : 0,
+                        maxWidth: 220
+                      }}
+                    >
+                      <FileText size={16} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.82rem', fontWeight: 700 }}>
+                        {msg.attachment.name || 'Attachment'}
+                      </span>
+                    </a>
                   )}
                   {msg.text && (
                     <div style={{ color: '#fff', fontSize: '0.88rem', lineHeight: 1.45, wordBreak: 'break-word' }}>{msg.text}</div>
@@ -368,14 +417,34 @@ export default function ChatModal({ listing, userProfile, onClose }) {
           ))}
         </div>
 
-        {/* Image preview */}
-        {previewImg && (
-          <div style={{ padding: '8px 16px', position: 'relative', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid var(--glass-border)' }}>
-            <img src={previewImg} alt="preview" style={{
-              height: 70, width: 70, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--glass-border)'
-            }} />
-            <button onClick={() => setPreviewImg(null)} style={{
-              position: 'absolute', top: 12, left: 66,
+        {/* Attachment preview */}
+        {previewAttachment && (
+          <div style={{ padding: '8px 16px', position: 'relative', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            {previewAttachment.isImage ? (
+              <img src={previewAttachment.dataUrl} alt="preview" style={{
+                height: 70, width: 70, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--glass-border)'
+              }} />
+            ) : (
+              <div style={{
+                height: 52,
+                maxWidth: 260,
+                borderRadius: 10,
+                border: '1px solid var(--glass-border)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '0 12px'
+              }}>
+                <FileText size={18} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.82rem', fontWeight: 700 }}>
+                  {previewAttachment.name}
+                </span>
+              </div>
+            )}
+            <button onClick={() => setPreviewAttachment(null)} style={{
+              position: 'absolute', top: 8, left: previewAttachment.isImage ? 76 : 268,
               background: '#f43f5e', border: 'none', borderRadius: '50%',
               width: 18, height: 18, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}><X size={10} /></button>
@@ -391,25 +460,24 @@ export default function ChatModal({ listing, userProfile, onClose }) {
         }}>
           <input
             type="file"
-            accept="image/*"
             ref={fileInputRef}
-            onChange={handleImageUpload}
+            onChange={handleAttachmentUpload}
             style={{ display: 'none' }}
           />
           <button
             onClick={() => fileInputRef.current?.click()}
             style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: 12, width: 42, height: 42,
-              color: '#9ca3af', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              borderRadius: 14, width: 48, height: 48,
+              color: '#d1d5db', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0, transition: 'all 0.2s'
             }}
-            title="Attach image"
+            title="Add file"
             className="nav-btn"
           >
-            <ImageIcon size={18} />
+            <Plus size={20} strokeWidth={2.2} />
           </button>
 
           <input
@@ -432,22 +500,22 @@ export default function ChatModal({ listing, userProfile, onClose }) {
           />
 
           <button
-            onClick={() => sendMessage(null, previewImg)}
-            disabled={!message.trim() && !previewImg}
+            onClick={() => sendMessage()}
+            disabled={!message.trim() && !previewAttachment}
             style={{
-              background: message.trim() || previewImg
-                ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)'
+              background: message.trim() || previewAttachment
+                ? 'linear-gradient(180deg, #4f8df7 0%, #7c6dff 100%)'
                 : 'rgba(255,255,255,0.05)',
-              border: 'none', borderRadius: 12, width: 42, height: 42,
-              color: '#fff', cursor: message.trim() || previewImg ? 'pointer' : 'not-allowed',
+              border: 'none', borderRadius: '50%', width: 48, height: 48,
+              color: '#fff', cursor: message.trim() || previewAttachment ? 'pointer' : 'not-allowed',
               flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.2s',
-              boxShadow: message.trim() || previewImg ? '0 4px 10px rgba(59, 130, 246, 0.25)' : 'none'
+              boxShadow: message.trim() || previewAttachment ? '0 4px 10px rgba(59, 130, 246, 0.25)' : 'none'
             }}
             className="nav-btn"
           >
-            <Send size={16} />
+            <ArrowUp size={20} strokeWidth={2.25} />
           </button>
         </div>
 

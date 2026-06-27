@@ -9,10 +9,14 @@ const router = Router();
 router.get('/', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, title, message, is_read AS "isRead", created_at AS "createdAt"
+      `SELECT notifications.id, title, message, listing_id AS "listingId", actor_id AS "actorId",
+              conversation_user_id AS "conversationUserId",
+              actor.name AS "actorName",
+              is_read AS "isRead", notifications.created_at AS "createdAt"
        FROM notifications
+       LEFT JOIN users actor ON actor.id = notifications.actor_id
        WHERE user_id = $1
-       ORDER BY created_at DESC`,
+       ORDER BY notifications.created_at DESC`,
       [req.user.id]
     );
     res.json({ notifications: result.rows });
@@ -30,7 +34,8 @@ router.patch('/:id/read', requireAuth, async (req, res) => {
       `UPDATE notifications
        SET is_read = TRUE
        WHERE id = $1 AND user_id = $2
-       RETURNING id, title, message, is_read AS "isRead"`,
+       RETURNING id, title, message, listing_id AS "listingId", actor_id AS "actorId",
+                 conversation_user_id AS "conversationUserId", is_read AS "isRead"`,
       [req.params.id, req.user.id]
     );
 

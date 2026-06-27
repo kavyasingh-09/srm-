@@ -223,6 +223,43 @@ export default function App() {
     }
   };
 
+  const handleOpenNotification = async (notification) => {
+    if (!notification?.listingId || !notification?.conversationUserId) return;
+
+    let listing = listings.find((item) => String(item.id) === String(notification.listingId));
+
+    if (!listing) {
+      try {
+        const data = await api.getListings();
+        const freshListings = Array.isArray(data?.listings) ? data.listings : [];
+        setListings(freshListings);
+        listing = freshListings.find((item) => String(item.id) === String(notification.listingId));
+      } catch (err) {
+        console.error('Failed to refresh listings for chat notification:', err);
+      }
+    }
+
+    if (!listing) {
+      alert('This listing is no longer available.');
+      return;
+    }
+
+    setActiveChatListing({
+      ...listing,
+      chatOtherUserId: notification.conversationUserId,
+      chatOtherUserName: notification.actorName || 'Student',
+    });
+
+    try {
+      await api.markNotificationAsRead(notification.id);
+      setNotifications((prev) =>
+        prev.map((item) => item.id === notification.id ? { ...item, isRead: true } : item)
+      );
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
+  };
+
   const handleToggleCart = (itemId) => {
     if (!requireLogin()) return;
     setCart(prev =>
@@ -413,6 +450,7 @@ export default function App() {
         showNotifications={showNotifications}
         setShowNotifications={setShowNotifications}
         onClearNotifications={handleClearNotifications}
+        onOpenNotification={handleOpenNotification}
         onOpenSellModal={handleOpenSellModal}
         onLoginRequired={requireLogin}
       />

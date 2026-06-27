@@ -17,7 +17,8 @@ export default function Navbar({
   showNotifications = false,
   setShowNotifications,
   onClearNotifications,
-  onLoginRequired
+  onLoginRequired,
+  onOpenNotification
 }) {
   const goToView = (view) => {
     if (view === 'profile' || view === 'cart') {
@@ -189,13 +190,22 @@ export default function Navbar({
                   ) : (
                     <div style={{ padding: '0.5rem' }}>
                       {notifications.map((notif) => (
-                        <div key={notif.id} style={{
+                        <div
+                          key={notif.id}
+                          onClick={() => {
+                            if (notif.listingId && notif.conversationUserId && onOpenNotification) {
+                              onOpenNotification(notif);
+                              setShowNotifications(false);
+                            }
+                          }}
+                          style={{
                           padding: '0.75rem',
                           borderRadius: '10px',
                           background: 'rgba(59, 130, 246, 0.05)',
                           borderLeft: '3px solid var(--primary-color)',
                           marginBottom: '0.5rem',
-                          fontSize: '0.85rem'
+                          fontSize: '0.85rem',
+                          cursor: notif.listingId && notif.conversationUserId ? 'pointer' : 'default'
                         }}>
                           <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
                             {notif.buyerName ? `❤️ ${notif.buyerName} is interested` : notif.title}

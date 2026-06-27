@@ -126,6 +126,12 @@ export const api = {
     return request(`/chats/${listingId}/${otherUserId}`);
   },
 
+  getChatConversations() {
+    return request('/chats').then(data => ({
+      conversations: Array.isArray(data?.conversations) ? data.conversations : []
+    }));
+  },
+
   sendChatMessage(listingId, receiverId, payload) {
     return request(`/chats/${listingId}/${receiverId}`, {
       method: 'POST',
