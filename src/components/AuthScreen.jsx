@@ -15,6 +15,7 @@ export default function AuthScreen({ onLogin, onBrowse }) {
   const [campus, setCampus] = useState(srmCampuses[0]);
   const [hostel, setHostel] = useState('');
   const [phone, setPhone] = useState('');
+  const [gender, setGender] = useState('male');
 
   useEffect(() => {
     if (campus === 'Kattankulathur' && srmHostels.Kattankulathur) {
@@ -77,6 +78,7 @@ export default function AuthScreen({ onLogin, onBrowse }) {
         campus,
         hostel,
         phone: phone || undefined,
+        gender,
       });
       setToken(token);
       onLogin(user);
@@ -226,6 +228,37 @@ export default function AuthScreen({ onLogin, onBrowse }) {
                 <User size={14} /> Full Name *
               </label>
               <input type="text" className="form-control" placeholder="e.g., Amit Kumar" value={name} onChange={(e) => setName(e.target.value)} required style={inputStyle} />
+            </div>
+
+            <div className="form-group">
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.6rem', display: 'block', color: 'var(--text-secondary)' }}>Gender *</label>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                {['male', 'female'].map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setGender(g)}
+                    style={{
+                      flex: 1,
+                      padding: '0.65rem',
+                      borderRadius: '10px',
+                      border: gender === g ? '2px solid var(--primary-color)' : '1.5px solid var(--glass-border)',
+                      background: gender === g ? 'rgba(0,58,112,0.12)' : 'rgba(255,255,255,0.05)',
+                      color: gender === g ? 'var(--primary-color)' : 'var(--text-secondary)',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.4rem',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {g === 'male' ? '👨' : '👩'} {g.charAt(0).toUpperCase() + g.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="form-group">

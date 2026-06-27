@@ -53,6 +53,7 @@ export default function App() {
   const [sellModalOpen, setSellModalOpen] = useState(false);
   const [editingListing, setEditingListing] = useState(null);
   const [activeChatListing, setActiveChatListing] = useState(null);
+  const [avatarEditOpen, setAvatarEditOpen] = useState(false);
 
   // User Profile State (dynamic, loaded from local storage)
   const [userProfile, setUserProfile] = useState(null);
@@ -269,6 +270,17 @@ export default function App() {
       localStorage.removeItem('srm_user_profile');
       localStorage.setItem('srm_is_logged_in', 'false');
       setCurrentView('login');
+    }
+  };
+
+  const handleUpdateAvatar = async (avatarUrl) => {
+    try {
+      const { user } = await api.updateAvatar(avatarUrl);
+      setUserProfile(user);
+      localStorage.setItem('srm_user_profile', JSON.stringify(user));
+      setAvatarEditOpen(false);
+    } catch (err) {
+      alert(err.message || 'Failed to update avatar.');
     }
   };
 
@@ -555,9 +567,95 @@ export default function App() {
           <div className="profile-view">
             {/* Sidebar info */}
             <div className="profile-sidebar glass-panel">
-              <div className="profile-avatar-large">
-                <img src={userProfile?.avatar} alt={userProfile?.name} />
+
+              {/* Avatar with edit button */}
+              <div style={{ position: 'relative', display: 'inline-block', marginBottom: '0.5rem' }}>
+                <div className="profile-avatar-large">
+                  <img
+                    src={userProfile?.avatar || `https://api.dicebear.com/7.x/${userProfile?.gender === 'female' ? 'avataaars-neutral' : 'avataaars'}/svg?seed=${encodeURIComponent(userProfile?.email || 'default')}`}
+                    alt={userProfile?.name}
+                  />
+                </div>
+                <button
+                  onClick={() => setAvatarEditOpen(!avatarEditOpen)}
+                  title="Edit Avatar"
+                  style={{
+                    position: 'absolute', bottom: 4, right: 4,
+                    width: '30px', height: '30px', borderRadius: '50%',
+                    background: 'var(--primary-color)', border: '2px solid white',
+                    color: 'white', cursor: 'pointer', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.75rem', boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                    transition: 'transform 0.2s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <Pencil size={13} />
+                </button>
               </div>
+
+              {/* Avatar picker modal */}
+              {avatarEditOpen && (() => {
+                const gender = userProfile?.gender || 'male';
+                const style = gender === 'female' ? 'avataaars-neutral' : 'avataaars';
+                const seeds = [
+                  userProfile?.email,
+                  `${userProfile?.email}-2`,
+                  `${userProfile?.email}-3`,
+                  `${userProfile?.name}-a`,
+                  `${userProfile?.name}-b`,
+                  `${userProfile?.name}-c`,
+                  `student-${gender}-1`,
+                  `student-${gender}-2`,
+                  `campus-${gender}-3`,
+                ];
+                return (
+                  <div style={{
+                    background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)',
+                    borderRadius: '16px', padding: '1.25rem', marginBottom: '1rem',
+                    boxShadow: 'var(--shadow-lg)',
+                  }}>
+                    <p style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                      Choose your avatar
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
+                      {seeds.map((seed, i) => {
+                        const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
+                        const isSelected = userProfile?.avatar === url;
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => handleUpdateAvatar(url)}
+                            style={{
+                              padding: '0.4rem', borderRadius: '12px', cursor: 'pointer',
+                              border: isSelected ? '2.5px solid var(--primary-color)' : '2px solid transparent',
+                              background: isSelected ? 'rgba(0,58,112,0.1)' : 'rgba(255,255,255,0.04)',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-color)'}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = isSelected ? 'var(--primary-color)' : 'transparent'}
+                          >
+                            <img src={url} alt={`Avatar ${i + 1}`} style={{ width: '100%', borderRadius: '8px', display: 'block' }} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={() => setAvatarEditOpen(false)}
+                      style={{
+                        width: '100%', marginTop: '0.75rem', padding: '0.5rem',
+                        borderRadius: '8px', border: '1px solid var(--glass-border)',
+                        background: 'transparent', color: 'var(--text-secondary)',
+                        cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                );
+              })()}
+
               <h3 className="profile-name">{userProfile?.name}</h3>
               <p className="profile-email" style={{ marginBottom: '1rem' }}>{userProfile?.email}</p>
               
@@ -602,6 +700,7 @@ export default function App() {
                 Log Out
               </button>
             </div>
+
 
             {/* Profile Tabs & Lists */}
             <div>

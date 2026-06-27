@@ -10,14 +10,15 @@ function isSrmEmail(email) {
   return email.toLowerCase().endsWith(SRM_EMAIL_SUFFIX);
 }
 
-function avatarForEmail(email) {
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`;
+function avatarForGender(gender, seed) {
+  const style = gender === 'female' ? 'avataaars-neutral' : 'avataaars';
+  return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
 }
 
 // POST /api/auth/signup
 router.post('/signup', async (req, res) => {
   try {
-    const { email, password, name, campus, hostel, phone } = req.body;
+    const { email, password, name, campus, hostel, phone, gender } = req.body;
 
     if (!email || !password || !name || !campus) {
       return res.status(400).json({ error: 'Email, password, name, and campus are required.' });
@@ -40,13 +41,14 @@ router.post('/signup', async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const verified = isSrmEmail(normalizedEmail);
-    const avatar = avatarForEmail(normalizedEmail);
+    const userGender = gender === 'female' ? 'female' : 'male';
+    const avatar = avatarForGender(userGender, normalizedEmail);
 
     const result = await pool.query(
-      `INSERT INTO users (email, password_hash, name, campus, hostel, phone, verified, avatar)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, email, name, campus, hostel, phone, verified, avatar`,
-      [normalizedEmail, passwordHash, name.trim(), campus, hostel || null, phone || null, verified, avatar]
+      `INSERT INTO users (email, password_hash, name, campus, hostel, phone, gender, verified, avatar)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id, email, name, campus, hostel, phone, gender, verified, avatar`,
+      [normalizedEmail, passwordHash, name.trim(), campus, hostel || null, phone || null, userGender, verified, avatar]
     );
 
     const user = formatUser(result.rows[0]);
@@ -71,7 +73,7 @@ router.post('/login', async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     const result = await pool.query(
-      'SELECT id, email, password_hash, name, campus, hostel, phone, verified, avatar FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, name, campus, hostel, phone, gender, verified, avatar FROM users WHERE email = $1',
       [normalizedEmail]
     );
 
@@ -100,7 +102,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, name, campus, hostel, phone, verified, avatar FROM users WHERE id = $1',
+      'SELECT id, email, name, campus, hostel, phone, gender, verified, avatar FROM users WHERE id = $1',
       [req.user.id]
     );
 
@@ -112,6 +114,28 @@ router.get('/me', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Me error:', err);
     res.status(500).json({ error: 'Failed to fetch profile.' });
+  }
+});
+
+// PATCH /api/auth/avatar  — update avatar choice
+router.patch('/avatar', requireAuth, async (req, res) => {
+  try {
+    const { avatar } = req.body;
+    if (!avatar || typeof avatar !== 'string') {
+      return res.status(400).json({ error: 'Avatar URL is required.' });
+    }
+
+    const result = await pool.query(
+      `UPDATE users SET avatar = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING id, email, name, campus, hostel, phone, gender, verified, avatar`,
+      [avatar, req.user.id]
+    );
+
+    res.json({ user: formatUser(result.rows[0]) });
+  } catch (err) {
+    console.error('Avatar update error:', err);
+    res.status(500).json({ error: 'Failed to update avatar.' });
   }
 });
 

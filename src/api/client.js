@@ -95,4 +95,8 @@ export const api = {
   deleteListing(id) {
     return request(`/listings/${id}`, { method: 'DELETE' });
   },
+
+  updateAvatar(avatar) {
+    return request('/auth/avatar', { method: 'PATCH', body: JSON.stringify({ avatar }) });
+  },
 };

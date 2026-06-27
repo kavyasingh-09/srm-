@@ -12,11 +12,14 @@ CREATE TABLE IF NOT EXISTS users (
   campus        VARCHAR(100) NOT NULL DEFAULT 'Kattankulathur',
   hostel        VARCHAR(100),
   phone         VARCHAR(50),
+  gender        VARCHAR(10) DEFAULT 'male',
   verified      BOOLEAN NOT NULL DEFAULT FALSE,
   avatar        TEXT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(10) DEFAULT 'male';
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 

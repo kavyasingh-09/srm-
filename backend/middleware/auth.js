@@ -38,6 +38,7 @@ export function formatUser(row) {
     campus: row.campus,
     hostel: row.hostel,
     phone: row.phone,
+    gender: row.gender || 'male',
     verified: row.verified,
     avatar: row.avatar,
   };
