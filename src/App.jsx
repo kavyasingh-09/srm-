@@ -613,40 +613,101 @@ export default function App() {
 
               {/* Avatar picker */}
               {avatarEditOpen && (() => {
-                const MALE_AVATAR   = 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-formal-male&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=2c1b18';
-                const FEMALE_AVATAR = 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-formal-female&clothing%5B%5D=blazerSweater&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=2c1b18';
-                const avatars = [
-                  { url: MALE_AVATAR,   label: '👨 Male'   },
-                  { url: FEMALE_AVATAR, label: '👩 Female' },
+                const userGender = userProfile?.gender || 'male';
+
+                const MALE_AVATARS = [
+                  {
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m1&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=ffdbb4&hairColor%5B%5D=2c1b18',
+                    label: 'Style 1',
+                  },
+                  {
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m2&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=4a312c',
+                    label: 'Style 2',
+                  },
+                  {
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m3&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=d08b5b&hairColor%5B%5D=2c1b18',
+                    label: 'Style 3',
+                  },
+                  {
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m4&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=ae5d29&hairColor%5B%5D=b58143',
+                    label: 'Style 4',
+                  },
                 ];
+
+                const FEMALE_AVATARS = [
+                  {
+                    url: 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-f1&clothing%5B%5D=blazerSweater&skinColor%5B%5D=ffdbb4&hairColor%5B%5D=2c1b18',
+                    label: 'Style 1',
+                  },
+                  {
+                    url: 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-f2&clothing%5B%5D=blazerSweater&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=b58143',
+                    label: 'Style 2',
+                  },
+                  {
+                    url: 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-f3&clothing%5B%5D=blazerSweater&skinColor%5B%5D=d08b5b&hairColor%5B%5D=4a312c',
+                    label: 'Style 3',
+                  },
+                  {
+                    url: 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-f4&clothing%5B%5D=blazerSweater&skinColor%5B%5D=ae5d29&hairColor%5B%5D=2c1b18',
+                    label: 'Style 4',
+                  },
+                ];
+
+                const avatars = userGender === 'female' ? FEMALE_AVATARS : MALE_AVATARS;
+                const genderLabel = userGender === 'female' ? '👩 Formal Female Avatars' : '👨 Formal Male Avatars';
+
                 return (
                   <div style={{
                     background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)',
                     borderRadius: '16px', padding: '1.25rem', marginBottom: '1rem',
                     boxShadow: 'var(--shadow-lg)',
                   }}>
-                    <p style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                    <p style={{ margin: '0 0 0.25rem', fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                       Choose your avatar
                     </p>
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <p style={{ margin: '0 0 0.85rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                      {genderLabel}
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem' }}>
                       {avatars.map(({ url, label }) => {
                         const isSelected = userProfile?.avatar === url;
                         return (
                           <button
                             key={url}
                             onClick={() => handleUpdateAvatar(url)}
+                            title={label}
                             style={{
-                              flex: 1, padding: '0.75rem', borderRadius: '14px', cursor: 'pointer',
-                              border: isSelected ? '2.5px solid var(--primary-color)' : '2px solid var(--glass-border)',
+                              padding: '0.85rem 0.5rem', borderRadius: '14px', cursor: 'pointer',
+                              border: isSelected ? '2.5px solid var(--primary-color)' : '1.5px solid var(--glass-border)',
                               background: isSelected ? 'rgba(0,58,112,0.12)' : 'rgba(255,255,255,0.04)',
-                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem',
                               transition: 'all 0.2s',
+                              position: 'relative',
                             }}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary-color)'}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = isSelected ? 'var(--primary-color)' : 'var(--glass-border)'}
+                            onMouseEnter={e => {
+                              e.currentTarget.style.borderColor = 'var(--primary-color)';
+                              e.currentTarget.style.background = 'rgba(0,58,112,0.08)';
+                            }}
+                            onMouseLeave={e => {
+                              e.currentTarget.style.borderColor = isSelected ? 'var(--primary-color)' : 'var(--glass-border)';
+                              e.currentTarget.style.background = isSelected ? 'rgba(0,58,112,0.12)' : 'rgba(255,255,255,0.04)';
+                            }}
                           >
-                            <img src={url} alt={label} style={{ width: '72px', height: '72px', borderRadius: '50%', display: 'block' }} />
-                            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: isSelected ? 'var(--primary-color)' : 'var(--text-secondary)' }}>
+                            {isSelected && (
+                              <span style={{
+                                position: 'absolute', top: '6px', right: '6px',
+                                background: 'var(--primary-color)', color: 'white',
+                                borderRadius: '50%', width: '18px', height: '18px',
+                                fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontWeight: 700,
+                              }}>✓</span>
+                            )}
+                            <img
+                              src={url}
+                              alt={label}
+                              style={{ width: '68px', height: '68px', borderRadius: '50%', display: 'block', border: isSelected ? '2px solid var(--primary-color)' : '2px solid transparent' }}
+                            />
+                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: isSelected ? 'var(--primary-color)' : 'var(--text-secondary)' }}>
                               {label}
                             </span>
                           </button>
@@ -656,7 +717,7 @@ export default function App() {
                     <button
                       onClick={() => setAvatarEditOpen(false)}
                       style={{
-                        width: '100%', marginTop: '0.75rem', padding: '0.5rem',
+                        width: '100%', marginTop: '0.85rem', padding: '0.5rem',
                         borderRadius: '8px', border: '1px solid var(--glass-border)',
                         background: 'transparent', color: 'var(--text-secondary)',
                         cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
@@ -667,6 +728,7 @@ export default function App() {
                   </div>
                 );
               })()}
+
 
 
               <h3 className="profile-name">{userProfile?.name}</h3>
