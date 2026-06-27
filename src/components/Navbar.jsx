@@ -57,26 +57,22 @@ export default function Navbar({
 
       {/* Action Controls & Navigation */}
       <div className="nav-actions">
-        {currentView !== 'login' && (
-          <>
-            <button
-              onClick={() => setCurrentView('browse')}
-              className={`nav-btn nav-btn-secondary ${currentView === 'browse' ? 'active' : ''}`}
-              style={currentView === 'browse' ? { color: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : {}}
-            >
-              Marketplace
-            </button>
+        <button
+          onClick={() => setCurrentView('browse')}
+          className={`nav-btn nav-btn-secondary ${currentView === 'browse' ? 'active' : ''}`}
+          style={currentView === 'browse' ? { color: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : {}}
+        >
+          Marketplace
+        </button>
 
-            <button
-              onClick={() => setCurrentView('lostfound')}
-              className={`nav-btn nav-btn-secondary ${currentView === 'lostfound' ? 'active' : ''}`}
-              style={currentView === 'lostfound' ? { color: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : {}}
-            >
-              <ShieldAlert size={16} />
-              Lost & Found
-            </button>
-          </>
-        )}
+        <button
+          onClick={() => setCurrentView('lostfound')}
+          className={`nav-btn nav-btn-secondary ${currentView === 'lostfound' ? 'active' : ''}`}
+          style={currentView === 'lostfound' ? { color: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : {}}
+        >
+          <ShieldAlert size={16} />
+          Lost & Found
+        </button>
 
         {isLoggedIn && (
           <>
@@ -243,7 +239,7 @@ export default function Navbar({
           </>
         )}
 
-        {!isLoggedIn && currentView !== 'login' && (
+        {!isLoggedIn && (
           <button
             className="nav-btn nav-btn-secondary"
             onClick={() => setCurrentView('login')}
@@ -255,15 +251,13 @@ export default function Navbar({
         )}
 
         {/* Theme Toggle Button */}
-        {currentView !== 'login' && (
-          <button
-            className="theme-toggle-btn"
-            onClick={() => setDarkMode(!darkMode)}
-            title="Toggle Light/Dark Theme"
-          >
-            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
-        )}
+        <button
+          className="theme-toggle-btn"
+          onClick={() => setDarkMode(!darkMode)}
+          title="Toggle Light/Dark Theme"
+        >
+          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
 
         {/* Sell CTA button */}
         {isLoggedIn && (

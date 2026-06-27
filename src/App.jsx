@@ -40,7 +40,7 @@ export default function App() {
   });
 
   // UI Navigation States
-  const [currentView, setCurrentView] = useState('login'); // start on login page
+  const [currentView, setCurrentView] = useState('browse'); // browse, lostfound, profile, cart
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedCampus, setSelectedCampus] = useState('All Campuses');
@@ -375,13 +375,7 @@ export default function App() {
             <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Checking session…</p>
           </div>
         ) : currentView === 'login' ? (
-          <AuthScreen 
-            onLogin={handleLogin} 
-            onBrowse={() => setCurrentView('browse')}
-            isLoggedIn={isLoggedIn}
-            userProfile={userProfile}
-            onLogout={handleLogout}
-          />
+          <AuthScreen onLogin={handleLogin} onBrowse={() => setCurrentView('browse')} />
         ) : (
           <>
             {currentView === 'browse' && (
@@ -594,6 +588,17 @@ export default function App() {
                 </div>
               </div>
 
+              <div className="profile-actions">
+                <button className="nav-btn nav-btn-primary" onClick={() => setSellModalOpen(true)} style={{ width: '100%', justifyContent: 'center' }}>
+                  Post Item
+                </button>
+                <button className="nav-btn nav-btn-secondary" onClick={() => setCurrentView('lostfound')} style={{ width: '100%', justifyContent: 'center' }}>
+                  Open Lost & Found
+                </button>
+                <button className="nav-btn nav-btn-secondary" onClick={() => setCurrentView('browse')} style={{ width: '100%', justifyContent: 'center' }}>
+                  Browse Marketplace
+                </button>
+              </div>
 
               <button
                 className="nav-btn nav-btn-secondary"
