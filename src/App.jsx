@@ -608,20 +608,13 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Avatar picker modal */}
+              {/* Avatar picker */}
               {avatarEditOpen && (() => {
-                const gender = userProfile?.gender || 'male';
-                const style = gender === 'female' ? 'avataaars-neutral' : 'avataaars';
-                const seeds = [
-                  userProfile?.email,
-                  `${userProfile?.email}-2`,
-                  `${userProfile?.email}-3`,
-                  `${userProfile?.name}-a`,
-                  `${userProfile?.name}-b`,
-                  `${userProfile?.name}-c`,
-                  `student-${gender}-1`,
-                  `student-${gender}-2`,
-                  `campus-${gender}-3`,
+                const MALE_AVATAR   = 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-male';
+                const FEMALE_AVATAR = 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-female';
+                const avatars = [
+                  { url: MALE_AVATAR,   label: '👨 Male'   },
+                  { url: FEMALE_AVATAR, label: '👩 Female' },
                 ];
                 return (
                   <div style={{
@@ -632,24 +625,27 @@ export default function App() {
                     <p style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                       Choose your avatar
                     </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
-                      {seeds.map((seed, i) => {
-                        const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                      {avatars.map(({ url, label }) => {
                         const isSelected = userProfile?.avatar === url;
                         return (
                           <button
-                            key={i}
+                            key={url}
                             onClick={() => handleUpdateAvatar(url)}
                             style={{
-                              padding: '0.4rem', borderRadius: '12px', cursor: 'pointer',
-                              border: isSelected ? '2.5px solid var(--primary-color)' : '2px solid transparent',
-                              background: isSelected ? 'rgba(0,58,112,0.1)' : 'rgba(255,255,255,0.04)',
+                              flex: 1, padding: '0.75rem', borderRadius: '14px', cursor: 'pointer',
+                              border: isSelected ? '2.5px solid var(--primary-color)' : '2px solid var(--glass-border)',
+                              background: isSelected ? 'rgba(0,58,112,0.12)' : 'rgba(255,255,255,0.04)',
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
                               transition: 'all 0.2s',
                             }}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-color)'}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = isSelected ? 'var(--primary-color)' : 'transparent'}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary-color)'}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = isSelected ? 'var(--primary-color)' : 'var(--glass-border)'}
                           >
-                            <img src={url} alt={`Avatar ${i + 1}`} style={{ width: '100%', borderRadius: '8px', display: 'block' }} />
+                            <img src={url} alt={label} style={{ width: '72px', height: '72px', borderRadius: '50%', display: 'block' }} />
+                            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: isSelected ? 'var(--primary-color)' : 'var(--text-secondary)' }}>
+                              {label}
+                            </span>
                           </button>
                         );
                       })}
@@ -668,6 +664,7 @@ export default function App() {
                   </div>
                 );
               })()}
+
 
               <h3 className="profile-name">{userProfile?.name}</h3>
               <p className="profile-email" style={{ marginBottom: '1rem' }}>{userProfile?.email}</p>

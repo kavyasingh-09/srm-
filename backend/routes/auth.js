@@ -10,9 +10,11 @@ function isSrmEmail(email) {
   return email.toLowerCase().endsWith(SRM_EMAIL_SUFFIX);
 }
 
-function avatarForGender(gender, seed) {
-  const style = gender === 'female' ? 'avataaars-neutral' : 'avataaars';
-  return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
+function avatarForGender(gender) {
+  if (gender === 'female') {
+    return 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-female';
+  }
+  return 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-male';
 }
 
 // POST /api/auth/signup
@@ -42,7 +44,7 @@ router.post('/signup', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const verified = isSrmEmail(normalizedEmail);
     const userGender = gender === 'female' ? 'female' : 'male';
-    const avatar = avatarForGender(userGender, normalizedEmail);
+    const avatar = avatarForGender(userGender);
 
     const result = await pool.query(
       `INSERT INTO users (email, password_hash, name, campus, hostel, phone, gender, verified, avatar)
@@ -160,7 +162,7 @@ router.patch('/profile', requireAuth, async (req, res) => {
     // Regenerate avatar only if gender changed (preserve custom picks)
     let newAvatar = currentUser.avatar;
     if (currentUser.gender !== userGender) {
-      newAvatar = avatarForGender(userGender, currentUser.email);
+      newAvatar = avatarForGender(userGender);
     }
 
     const result = await pool.query(
