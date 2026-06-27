@@ -121,4 +121,15 @@ export const api = {
   clearNotifications() {
     return request('/notifications/clear', { method: 'POST' });
   },
+
+  getChat(listingId, otherUserId) {
+    return request(`/chats/${listingId}/${otherUserId}`);
+  },
+
+  sendChatMessage(listingId, receiverId, payload) {
+    return request(`/chats/${listingId}/${receiverId}`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
 };

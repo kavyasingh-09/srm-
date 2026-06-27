@@ -6,7 +6,7 @@ import authRoutes from './routes/auth.js';
 import lostFoundRoutes from './routes/lostFound.js';
 import listingsRoutes from './routes/listings.js';
 import notificationsRoutes from './routes/notifications.js';
-
+import chatsRoutes from './routes/chats.js';
 
 dotenv.config({ override: true });
 
@@ -62,6 +62,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/lost-found', lostFoundRoutes);
 app.use('/api/listings', listingsRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/chats', chatsRoutes);
 
 
 async function start() {

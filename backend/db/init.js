@@ -80,6 +80,20 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id SERIAL PRIMARY KEY,
+  listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+  sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  receiver_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  encrypted_message TEXT NOT NULL,
+  iv VARCHAR(64) NOT NULL,
+  signature VARCHAR(64) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_listing_id ON chat_messages (listing_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_participants ON chat_messages (sender_id, receiver_id);
 `;
 
 export async function initDatabase() {

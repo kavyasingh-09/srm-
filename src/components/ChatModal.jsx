@@ -1,53 +1,98 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { srmMeetupHotspots } from '../data/mockData';
-import { Calendar, Send, Image as ImageIcon, X, MessageCircle, MapPin, Clock } from 'lucide-react';
-
-const CHAT_STORAGE_KEY = 'srm_chat_threads';
-
-function getThreads() {
-  try {
-    return JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY)) || {};
-  } catch {
-    return {};
-  }
-}
-
-function saveThreads(threads) {
-  localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(threads));
-}
+import { Calendar, Send, Image as ImageIcon, X, MessageCircle, MapPin, Clock, ShieldCheck } from 'lucide-react';
+import { api } from '../api/client';
+import { deriveSharedKey, encryptMessage, decryptMessage } from '../utils/crypto';
 
 export default function ChatModal({ listing, userProfile, onClose }) {
-  const threadId = `listing_${listing.id}`;
-  const [threads, setThreads] = useState(getThreads());
+  const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [previewImg, setPreviewImg] = useState(null);
+  const [sharedKey, setSharedKey] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const pollIntervalRef = useRef(null);
 
-  const messages = threads[threadId] || [];
+  // We assume the other user is the seller. If current user IS the seller, they are chatting with themselves (for testing)
+  const otherUserId = listing.seller_id || listing.seller?.id || 1; // Fallback for mock data
+
+  // Initialize E2EE shared key
+  useEffect(() => {
+    async function initCrypto() {
+      try {
+        const key = await deriveSharedKey(listing.id, userProfile.id, otherUserId);
+        setSharedKey(key);
+      } catch (err) {
+        console.error("Failed to derive E2EE key:", err);
+      }
+    }
+    if (userProfile?.id && listing?.id) {
+      initCrypto();
+    }
+  }, [listing.id, userProfile.id, otherUserId]);
+
+  // Fetch and poll messages
+  const fetchMessages = async () => {
+    if (!sharedKey) return;
+    try {
+      const data = await api.getChat(listing.id, otherUserId);
+      if (data.messages) {
+        const decryptedMessages = await Promise.all(
+          data.messages.map(async (msg) => {
+            const plaintext = await decryptMessage(msg.encryptedMessage, msg.iv, sharedKey);
+            let parsedText = plaintext;
+            let parsedImage = null;
+            
+            // Try to parse JSON in case it contains an image
+            try {
+              const parsed = JSON.parse(plaintext);
+              if (parsed.text !== undefined) parsedText = parsed.text;
+              if (parsed.image !== undefined) parsedImage = parsed.image;
+            } catch (e) {
+              // It's just plain text
+            }
+            
+            return {
+              id: msg.id,
+              senderId: msg.senderId,
+              text: parsedText,
+              image: parsedImage,
+              time: new Date(msg.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+              isSystem: plaintext.startsWith('📅 Meetup Scheduled!')
+            };
+          })
+        );
+        setMessages(decryptedMessages);
+      }
+    } catch (err) {
+      console.error("Failed to fetch messages:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (sharedKey) {
+      fetchMessages();
+      pollIntervalRef.current = setInterval(fetchMessages, 3000);
+    }
+    return () => clearInterval(pollIntervalRef.current);
+  }, [sharedKey]);
 
   // Scheduler States
   const [showScheduler, setShowScheduler] = useState(false);
   const [meetupSpot, setMeetupSpot] = useState(listing.meetupHotspot || srmMeetupHotspots[0]);
   const [meetupTime, setMeetupTime] = useState('');
 
-  function confirmMeetup() {
+  async function confirmMeetup() {
     if (!meetupTime.trim()) {
       alert("Please specify a meetup time!");
       return;
     }
     const systemText = `📅 Meetup Scheduled!\n📍 Location: ${meetupSpot}\n⏰ Time: ${meetupTime}`;
-    const newMsg = {
-      id: Date.now(),
-      sender: "System Notification",
-      senderRole: "system",
-      text: systemText,
-      image: null,
-      time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-    };
-    const updated = { ...threads, [threadId]: [...messages, newMsg] };
-    setThreads(updated);
-    saveThreads(updated);
+    await sendMessage(systemText);
     setShowScheduler(false);
     setMeetupTime('');
   }
@@ -63,22 +108,35 @@ export default function ChatModal({ listing, userProfile, onClose }) {
     return () => window.removeEventListener('keydown', handle);
   }, [onClose]);
 
-  function sendMessage(textOverride, imgDataUrl) {
+  async function sendMessage(textOverride, imgDataUrl) {
     const text = textOverride || message.trim();
     if (!text && !imgDataUrl) return;
-    const newMsg = {
-      id: Date.now(),
-      sender: userProfile.name,
-      senderRole: listing.sellerName === userProfile.name ? 'seller' : 'buyer',
-      text: text || '',
-      image: imgDataUrl || null,
-      time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-    };
-    const updated = { ...threads, [threadId]: [...messages, newMsg] };
-    setThreads(updated);
-    saveThreads(updated);
-    setMessage('');
-    setPreviewImg(null);
+    if (!sharedKey) return alert("E2EE Key not ready.");
+
+    const payloadObj = { text, image: imgDataUrl || null };
+    const plaintext = JSON.stringify(payloadObj);
+
+    try {
+      const { encryptedMessage, iv, signature } = await encryptMessage(plaintext, sharedKey);
+      
+      // Optimistic UI update
+      const tempMsg = {
+        id: Date.now(),
+        senderId: userProfile.id,
+        text,
+        image: imgDataUrl,
+        time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        isSystem: text.startsWith('📅 Meetup')
+      };
+      setMessages(prev => [...prev, tempMsg]);
+      setMessage('');
+      setPreviewImg(null);
+
+      await api.sendChatMessage(listing.id, otherUserId, { encryptedMessage, iv, signature });
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      alert("Failed to send message securely.");
+    }
   }
 
   function handleImageUpload(e) {
@@ -106,7 +164,7 @@ export default function ChatModal({ listing, userProfile, onClose }) {
     "Can you show more photos?",
   ];
 
-  const isMine = (msg) => msg.sender === userProfile.name;
+  const isMine = (msg) => msg.senderId === userProfile.id;
 
   return (
     <div style={{
@@ -141,8 +199,11 @@ export default function ChatModal({ listing, userProfile, onClose }) {
           }}><MessageCircle size={20} /></div>
           
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#fff', fontWeight: 800, fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ color: '#fff', fontWeight: 800, fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '6px' }}>
               {listing.title}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem' }}>
+                <ShieldCheck size={12} /> E2EE Secured
+              </div>
             </div>
             <div style={{ color: 'var(--primary-color)', fontSize: '0.78rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
               <span>Chatting with {listing.seller?.name || 'Seller'}</span>
