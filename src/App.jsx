@@ -268,7 +268,7 @@ export default function App() {
       setIsLoggedIn(false);
       localStorage.removeItem('srm_user_profile');
       localStorage.setItem('srm_is_logged_in', 'false');
-      setCurrentView('browse');
+      setCurrentView('login');
     }
   };
 
