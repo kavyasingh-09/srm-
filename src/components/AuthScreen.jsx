@@ -3,7 +3,7 @@ import { ShieldCheck, LogIn, UserPlus, Mail, Lock, User, Phone, MapPin } from 'l
 import { srmCampuses, srmHostels } from '../data/mockData';
 import { api, setToken } from '../api/client';
 
-export default function AuthScreen({ onLogin, onBrowse }) {
+export default function AuthScreen({ onLogin, onBrowse, isLoggedIn, userProfile, onLogout }) {
   const [mode, setMode] = useState('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -86,6 +86,97 @@ export default function AuthScreen({ onLogin, onBrowse }) {
       setLoading(false);
     }
   };
+
+  if (isLoggedIn && userProfile) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '80vh',
+        padding: '2.5rem 0',
+        position: 'relative',
+      }}>
+        <div className="circle-glow" style={{ top: '10%', left: '20%', width: '350px', height: '350px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, transparent 70%)' }} />
+        <div className="circle-glow" style={{ bottom: '10%', right: '20%', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(255, 199, 44, 0.12) 0%, transparent 70%)' }} />
+
+        <div className="glass-panel login-card" style={{
+          width: '100%',
+          maxWidth: '460px',
+          padding: '3rem',
+          boxShadow: 'var(--shadow-lg)',
+          border: '1px solid var(--glass-border)',
+          position: 'relative',
+          zIndex: 5,
+          textAlign: 'center'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div className="brand-logo-container" style={{
+              margin: '0 auto 1.25rem',
+              width: '64px',
+              height: '64px',
+              borderRadius: '16px',
+              boxShadow: '0 8px 24px rgba(0, 58, 112, 0.25)',
+              border: '2.5px solid var(--accent-color)',
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: '32px', height: '32px' }}>
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
+              </svg>
+            </div>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 850, letterSpacing: '-0.75px', color: 'var(--text-primary)' }}>
+              Welcome Back!
+            </h2>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+              You are signed in as <strong>{userProfile.name}</strong>
+            </p>
+          </div>
+
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.03)',
+            borderRadius: '16px',
+            padding: '1.5rem',
+            marginBottom: '2rem',
+            border: '1px solid var(--glass-border)',
+            textAlign: 'left'
+          }}>
+            <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Email:</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.9rem' }}>{userProfile.email}</span>
+            </div>
+            <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Campus:</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.9rem' }}>SRM {userProfile.campus}</span>
+            </div>
+            {userProfile.hostel && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Hostel:</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.9rem' }}>{userProfile.hostel}</span>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="nav-btn nav-btn-primary"
+            onClick={onBrowse}
+            style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', borderRadius: '12px', fontWeight: 700, marginBottom: '1rem' }}
+          >
+            Go to Marketplace
+          </button>
+
+          <button
+            type="button"
+            className="nav-btn nav-btn-secondary"
+            onClick={onLogout}
+            style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', borderRadius: '12px', fontWeight: 600 }}
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const inputStyle = {
     borderRadius: '12px',

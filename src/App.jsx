@@ -116,7 +116,6 @@ export default function App() {
         const { user } = await api.me();
         setUserProfile(user);
         setIsLoggedIn(true);
-        setCurrentView('browse');
         localStorage.setItem('srm_user_profile', JSON.stringify(user));
         localStorage.setItem('srm_is_logged_in', 'true');
       } catch {
@@ -376,7 +375,13 @@ export default function App() {
             <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Checking session…</p>
           </div>
         ) : currentView === 'login' ? (
-          <AuthScreen onLogin={handleLogin} onBrowse={() => setCurrentView('browse')} />
+          <AuthScreen 
+            onLogin={handleLogin} 
+            onBrowse={() => setCurrentView('browse')}
+            isLoggedIn={isLoggedIn}
+            userProfile={userProfile}
+            onLogout={handleLogout}
+          />
         ) : (
           <>
             {currentView === 'browse' && (
