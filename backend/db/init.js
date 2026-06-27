@@ -81,14 +81,23 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
 
+-- Drop and recreate chat_messages with TEXT listing_id to support both real and mock listing IDs
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'chat_messages' AND column_name = 'listing_id' AND data_type = 'integer') THEN
+    DROP TABLE IF EXISTS chat_messages;
+  END IF;
+END
+$$;
+
 CREATE TABLE IF NOT EXISTS chat_messages (
   id SERIAL PRIMARY KEY,
-  listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+  listing_id TEXT NOT NULL,
   sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   receiver_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   encrypted_message TEXT NOT NULL,
-  iv VARCHAR(64) NOT NULL,
-  signature VARCHAR(64) NOT NULL,
+  iv TEXT NOT NULL,
+  signature TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

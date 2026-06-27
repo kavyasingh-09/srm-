@@ -615,8 +615,10 @@ export default function ProductDetailModal({ product, onClose, onVerifyUserSimul
                         className="social-btn"
                         style={{
                           background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                          color: '#fff'
+                          color: '#fff',
+                          cursor: 'pointer'
                         }}
+                        title="Start Secure E2EE Chat"
                       >
                         <MessageCircle size={16} />
                         In-App Chat

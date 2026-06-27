@@ -15,29 +15,34 @@ export default function ChatModal({ listing, userProfile, onClose }) {
   const fileInputRef = useRef(null);
   const pollIntervalRef = useRef(null);
 
-  // We assume the other user is the seller. If current user IS the seller, they are chatting with themselves (for testing)
-  const otherUserId = listing.seller_id || listing.seller?.id || 1; // Fallback for mock data
+  // Determine the "other user" ID.
+  // For real DB listings: use seller_id or seller?.id.
+  // For mock listings: use user_id (the owner) or fall back to 0 (representing a virtual "mock seller").
+  const otherUserId = listing.seller_id || listing.seller?.id || listing.user_id || 0;
+  
+  // Use the listing id as a string room key — works for both "lst-4" (mock) and 7 (real DB)
+  const listingRoomId = String(listing.id);
 
   // Initialize E2EE shared key
   useEffect(() => {
     async function initCrypto() {
       try {
-        const key = await deriveSharedKey(listing.id, userProfile.id, otherUserId);
+        const key = await deriveSharedKey(listingRoomId, userProfile.id, otherUserId);
         setSharedKey(key);
       } catch (err) {
         console.error("Failed to derive E2EE key:", err);
       }
     }
-    if (userProfile?.id && listing?.id) {
+    if (userProfile?.id !== undefined && listingRoomId) {
       initCrypto();
     }
-  }, [listing.id, userProfile.id, otherUserId]);
+  }, [listingRoomId, userProfile.id, otherUserId]);
 
   // Fetch and poll messages
   const fetchMessages = async () => {
     if (!sharedKey) return;
     try {
-      const data = await api.getChat(listing.id, otherUserId);
+      const data = await api.getChat(listingRoomId, otherUserId);
       if (data.messages) {
         const decryptedMessages = await Promise.all(
           data.messages.map(async (msg) => {
@@ -132,7 +137,7 @@ export default function ChatModal({ listing, userProfile, onClose }) {
       setMessage('');
       setPreviewImg(null);
 
-      await api.sendChatMessage(listing.id, otherUserId, { encryptedMessage, iv, signature });
+      await api.sendChatMessage(listingRoomId, otherUserId, { encryptedMessage, iv, signature });
     } catch (err) {
       console.error("Failed to send message:", err);
       alert("Failed to send message securely.");
