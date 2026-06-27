@@ -103,4 +103,22 @@ export const api = {
   updateProfile(data) {
     return request('/auth/profile', { method: 'PATCH', body: JSON.stringify(data) });
   },
+
+  favoriteListing(id) {
+    return request(`/listings/${id}/favorite`, { method: 'POST' });
+  },
+
+  getNotifications() {
+    return request('/notifications').then(data => ({
+      notifications: Array.isArray(data?.notifications) ? data.notifications : []
+    }));
+  },
+
+  markNotificationAsRead(id) {
+    return request(`/notifications/${id}/read`, { method: 'PATCH' });
+  },
+
+  clearNotifications() {
+    return request('/notifications/clear', { method: 'POST' });
+  },
 };

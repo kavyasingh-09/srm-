@@ -69,6 +69,17 @@ CREATE TABLE IF NOT EXISTS listings (
 CREATE INDEX IF NOT EXISTS idx_listings_campus ON listings (campus);
 CREATE INDEX IF NOT EXISTS idx_listings_category ON listings (category);
 CREATE INDEX IF NOT EXISTS idx_listings_created ON listings (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title       VARCHAR(255) NOT NULL,
+  message     TEXT NOT NULL,
+  is_read     BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
 `;
 
 export async function initDatabase() {

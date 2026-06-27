@@ -195,14 +195,15 @@ export default function Navbar({
                           fontSize: '0.85rem'
                         }}>
                           <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                            ❤️ {notif.buyerName} is interested
+                            {notif.buyerName ? `❤️ ${notif.buyerName} is interested` : notif.title}
                           </div>
                           <div style={{ color: 'var(--text-secondary)', marginTop: '0.25rem', fontSize: '0.8rem' }}>
-                            {notif.itemTitle}
+                            {notif.buyerName ? notif.itemTitle : notif.message}
                           </div>
                           <div style={{ color: 'var(--text-light)', marginTop: '0.25rem', fontSize: '0.75rem' }}>
-                            {notif.timestamp}
+                            {notif.timestamp || (notif.createdAt ? new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '')}
                           </div>
+
                         </div>
                       ))}
                     </div>

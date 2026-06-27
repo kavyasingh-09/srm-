@@ -194,4 +194,57 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/listings/:id/favorite — Toggle favorite and notify seller (auth required)
+router.post('/:id/favorite', requireAuth, async (req, res) => {
+  try {
+    const listingId = parseListingId(req.params.id);
+    if (!listingId || Number.isNaN(listingId)) {
+      return res.status(400).json({ error: 'Invalid listing id.' });
+    }
+
+    // 1. Fetch listing details to find the seller
+    const listingRes = await pool.query(
+      `SELECT id, user_id, title, seller_name, seller_email FROM listings WHERE id = $1`,
+      [listingId]
+    );
+
+    if (listingRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Listing not found.' });
+    }
+
+    const listing = listingRes.rows[0];
+
+    // 2. Fetch the current user (buyer) name to include in notification
+    const buyerRes = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+    const buyerName = buyerRes.rows[0]?.name || 'Someone';
+
+    // 3. Resolve seller's user ID
+    let sellerUserId = listing.user_id;
+    if (!sellerUserId) {
+      const sellerRes = await pool.query('SELECT id FROM users WHERE email = $1', [listing.seller_email]);
+      if (sellerRes.rows.length > 0) {
+        sellerUserId = sellerRes.rows[0].id;
+      }
+    }
+
+    // 4. Create notification for seller (only if seller is a valid registered user and is NOT the buyer)
+    if (sellerUserId && sellerUserId !== req.user.id) {
+      await pool.query(
+        `INSERT INTO notifications (user_id, title, message)
+         VALUES ($1, $2, $3)`,
+        [
+          sellerUserId,
+          'Listing Saved 🌟',
+          `${buyerName} saved your listing "${listing.title}".`
+        ]
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Favorite listing error:', err);
+    res.status(500).json({ error: 'Failed to process favorite.' });
+  }
+});
+
 export default router;

@@ -5,6 +5,8 @@ import { initDatabase } from './db/init.js';
 import authRoutes from './routes/auth.js';
 import lostFoundRoutes from './routes/lostFound.js';
 import listingsRoutes from './routes/listings.js';
+import notificationsRoutes from './routes/notifications.js';
+
 
 dotenv.config({ override: true });
 
@@ -59,6 +61,8 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/lost-found', lostFoundRoutes);
 app.use('/api/listings', listingsRoutes);
+app.use('/api/notifications', notificationsRoutes);
+
 
 async function start() {
   if (!process.env.DATABASE_URL) {

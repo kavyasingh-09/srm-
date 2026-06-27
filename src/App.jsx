@@ -62,7 +62,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
 
-  const [notifications, setNotifications] = useState(() => loadStoredArray('srm_notifications'));
+  const [notifications, setNotifications] = useState([]);
 
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -142,9 +142,26 @@ export default function App() {
     localStorage.setItem('srm_cart', JSON.stringify(cart));
   }, [cart]);
 
+  // Load user notifications from DB when logged in
   useEffect(() => {
-    localStorage.setItem('srm_notifications', JSON.stringify(notifications));
-  }, [notifications]);
+    if (!isLoggedIn) {
+      setNotifications([]);
+      return;
+    }
+
+    async function loadNotifications() {
+      try {
+        const data = await api.getNotifications();
+        setNotifications(data.notifications || []);
+      } catch (err) {
+        console.error('Failed to load notifications:', err);
+      }
+    }
+
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 10000); // poll every 10 seconds
+    return () => clearInterval(interval);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     localStorage.setItem('srm_dark_mode', darkMode);
@@ -181,11 +198,29 @@ export default function App() {
     setEditingListing(null);
   };
 
-  const handleToggleFavorite = (itemId) => {
+  const handleToggleFavorite = async (itemId) => {
     if (!requireLogin()) return;
+    const isAdding = !favorites.includes(itemId);
     setFavorites(prev =>
       prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
     );
+
+    if (isAdding) {
+      try {
+        await api.favoriteListing(itemId);
+      } catch (err) {
+        console.error('Failed to notify seller of favorite listing:', err);
+      }
+    }
+  };
+
+  const handleClearNotifications = async () => {
+    try {
+      await api.clearNotifications();
+      setNotifications([]);
+    } catch (err) {
+      console.error('Failed to clear notifications:', err);
+    }
   };
 
   const handleToggleCart = (itemId) => {
@@ -377,7 +412,7 @@ export default function App() {
         notifications={notifications}
         showNotifications={showNotifications}
         setShowNotifications={setShowNotifications}
-        onClearNotifications={() => setNotifications([])}
+        onClearNotifications={handleClearNotifications}
         onOpenSellModal={handleOpenSellModal}
         onLoginRequired={requireLogin}
       />
