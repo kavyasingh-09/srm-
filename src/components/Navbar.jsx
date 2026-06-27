@@ -78,7 +78,7 @@ export default function Navbar({
           </>
         )}
 
-        {isLoggedIn && (
+        {isLoggedIn && currentView !== 'login' && (
           <>
             {/* Profile */}
             <button
@@ -266,7 +266,7 @@ export default function Navbar({
         )}
 
         {/* Sell CTA button */}
-        {isLoggedIn && (
+        {isLoggedIn && currentView !== 'login' && (
           <button
             className="nav-btn nav-btn-primary"
             onClick={onOpenSellModal}
