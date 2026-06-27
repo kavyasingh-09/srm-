@@ -99,4 +99,8 @@ export const api = {
   updateAvatar(avatar) {
     return request('/auth/avatar', { method: 'PATCH', body: JSON.stringify({ avatar }) });
   },
+
+  updateProfile(data) {
+    return request('/auth/profile', { method: 'PATCH', body: JSON.stringify(data) });
+  },
 };

@@ -139,4 +139,43 @@ router.patch('/avatar', requireAuth, async (req, res) => {
   }
 });
 
+// PATCH /api/auth/profile  — update editable profile fields
+router.patch('/profile', requireAuth, async (req, res) => {
+  try {
+    const { name, phone, campus, hostel, gender } = req.body;
+
+    if (!name || !campus) {
+      return res.status(400).json({ error: 'Name and campus are required.' });
+    }
+
+    const userGender = gender === 'female' ? 'female' : 'male';
+
+    // Fetch current user to decide whether to regenerate avatar
+    const current = await pool.query(
+      'SELECT avatar, gender, email FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    const currentUser = current.rows[0];
+
+    // Regenerate avatar only if gender changed (preserve custom picks)
+    let newAvatar = currentUser.avatar;
+    if (currentUser.gender !== userGender) {
+      newAvatar = avatarForGender(userGender, currentUser.email);
+    }
+
+    const result = await pool.query(
+      `UPDATE users
+       SET name = $1, phone = $2, campus = $3, hostel = $4, gender = $5, avatar = $6, updated_at = NOW()
+       WHERE id = $7
+       RETURNING id, email, name, campus, hostel, phone, gender, verified, avatar`,
+      [name.trim(), phone || null, campus, hostel || null, userGender, newAvatar, req.user.id]
+    );
+
+    res.json({ user: formatUser(result.rows[0]) });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ error: 'Failed to update profile.' });
+  }
+});
+
 export default router;

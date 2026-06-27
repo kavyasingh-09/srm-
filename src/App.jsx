@@ -10,8 +10,9 @@ import AuthScreen from './components/AuthScreen';
 import CartPage from './components/CartPage';
 
 import ChatModal from './components/ChatModal';
+import ProfileEditModal from './components/ProfileEditModal';
 import { api, getToken, setToken } from './api/client';
-import { Grid, List, Shield, CheckCircle, Trash2, Heart, Award, ShoppingCart, Pencil } from 'lucide-react';
+import { Grid, List, Shield, CheckCircle, Trash2, Heart, Award, ShoppingCart, Pencil, Save, X, Phone, MapPin } from 'lucide-react';
 
 function loadStoredArray(key) {
   try {
@@ -54,6 +55,7 @@ export default function App() {
   const [editingListing, setEditingListing] = useState(null);
   const [activeChatListing, setActiveChatListing] = useState(null);
   const [avatarEditOpen, setAvatarEditOpen] = useState(false);
+  const [profileEditOpen, setProfileEditOpen] = useState(false);
 
   // User Profile State (dynamic, loaded from local storage)
   const [userProfile, setUserProfile] = useState(null);
@@ -281,6 +283,17 @@ export default function App() {
       setAvatarEditOpen(false);
     } catch (err) {
       alert(err.message || 'Failed to update avatar.');
+    }
+  };
+
+  const handleUpdateProfile = async (data) => {
+    try {
+      const { user } = await api.updateProfile(data);
+      setUserProfile(user);
+      localStorage.setItem('srm_user_profile', JSON.stringify(user));
+      setProfileEditOpen(false);
+    } catch (err) {
+      alert(err.message || 'Failed to update profile.');
     }
   };
 
@@ -693,6 +706,15 @@ export default function App() {
               </div>
 
               <button
+                className="nav-btn nav-btn-primary"
+                onClick={() => setProfileEditOpen(true)}
+                style={{ width: '100%', justifyContent: 'center', marginBottom: '0.75rem', gap: '0.5rem' }}
+              >
+                <Pencil size={15} />
+                Edit Profile
+              </button>
+
+              <button
                 className="nav-btn nav-btn-secondary"
                 onClick={handleLogout}
                 style={{ width: '100%', justifyContent: 'center', borderColor: '#ef4444', color: '#ef4444' }}
@@ -700,6 +722,16 @@ export default function App() {
                 Log Out
               </button>
             </div>
+
+            {/* Profile Edit Modal */}
+            {profileEditOpen && (
+              <ProfileEditModal
+                userProfile={userProfile}
+                onSave={handleUpdateProfile}
+                onClose={() => setProfileEditOpen(false)}
+              />
+            )}
+
 
 
             {/* Profile Tabs & Lists */}
