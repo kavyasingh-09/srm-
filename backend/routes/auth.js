@@ -12,12 +12,11 @@ function isSrmEmail(email) {
 
 function avatarForGender(gender) {
   if (gender === 'female') {
-    // Formal female: blazer sweater, no accessories
-    return 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-formal-female&clothing%5B%5D=blazerSweater&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=2c1b18';
+    return 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-f1&clothing[]=blazerAndSweater&top[]=curly&skinColor[]=ffdbb4&hairColor[]=2c1b18';
   }
-  // Formal male: blazer shirt, no facial hair
-  return 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-formal-male&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=2c1b18';
+  return 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m1&clothing[]=blazerAndShirt&facialHairProbability=0&skinColor[]=ffdbb4&hairColor[]=2c1b18';
 }
+
 
 // POST /api/auth/signup
 router.post('/signup', async (req, res) => {

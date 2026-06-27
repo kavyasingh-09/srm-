@@ -112,8 +112,8 @@ export default function ProfileEditModal({ userProfile, onSave, onClose }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.75rem', padding: '1rem', borderRadius: '14px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)' }}>
           <img
             src={userProfile?.avatar || (gender === 'female'
-              ? 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-formal-female&clothing%5B%5D=blazerSweater&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=2c1b18'
-              : 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-formal-male&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=2c1b18'
+              ? 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-f1&clothing[]=blazerAndSweater&top[]=curly&skinColor[]=ffdbb4&hairColor[]=2c1b18'
+              : 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m1&clothing[]=blazerAndShirt&facialHairProbability=0&skinColor[]=ffdbb4&hairColor[]=2c1b18'
             )}
             alt="avatar"
             style={{ width: '60px', height: '60px', borderRadius: '50%', border: '2px solid var(--primary-color)' }}

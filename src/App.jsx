@@ -586,8 +586,8 @@ export default function App() {
                 <div className="profile-avatar-large">
                   <img
                     src={userProfile?.avatar || (userProfile?.gender === 'female'
-                      ? 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-formal-female&clothing%5B%5D=blazerSweater&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=2c1b18'
-                      : 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-formal-male&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=2c1b18'
+                      ? 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-f1&clothing[]=blazerAndSweater&top[]=curly&skinColor[]=ffdbb4&hairColor[]=2c1b18'
+                      : 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m1&clothing[]=blazerAndShirt&facialHairProbability=0&skinColor[]=ffdbb4&hairColor[]=2c1b18'
                     )}
                     alt={userProfile?.name}
                   />
@@ -617,41 +617,42 @@ export default function App() {
 
                 const MALE_AVATARS = [
                   {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m1&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=ffdbb4&hairColor%5B%5D=2c1b18',
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m1&clothing[]=blazerAndShirt&facialHairProbability=0&skinColor[]=ffdbb4&hairColor[]=2c1b18',
                     label: 'Style 1',
                   },
                   {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m2&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=4a312c',
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m2&clothing[]=blazerAndShirt&facialHairProbability=0&skinColor[]=f8b4a0&hairColor[]=4a312c',
                     label: 'Style 2',
                   },
                   {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m3&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=d08b5b&hairColor%5B%5D=2c1b18',
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m3&clothing[]=blazerAndShirt&facialHairProbability=0&skinColor[]=d08b5b&hairColor[]=2c1b18',
                     label: 'Style 3',
                   },
                   {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m4&clothing%5B%5D=blazerShirt&facialHair%5B%5D=&skinColor%5B%5D=ae5d29&hairColor%5B%5D=b58143',
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m4&clothing[]=blazerAndShirt&facialHairProbability=0&skinColor[]=ae5d29&hairColor[]=b58143',
                     label: 'Style 4',
                   },
                 ];
 
                 const FEMALE_AVATARS = [
                   {
-                    url: 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-f1&clothing%5B%5D=blazerSweater&skinColor%5B%5D=ffdbb4&hairColor%5B%5D=2c1b18',
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-f1&clothing[]=blazerAndSweater&top[]=curly&skinColor[]=ffdbb4&hairColor[]=2c1b18',
                     label: 'Style 1',
                   },
                   {
-                    url: 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-f2&clothing%5B%5D=blazerSweater&skinColor%5B%5D=f8b4a0&hairColor%5B%5D=b58143',
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-f2&clothing[]=blazerAndSweater&top[]=longButNotTooLong&skinColor[]=f8b4a0&hairColor[]=b58143',
                     label: 'Style 2',
                   },
                   {
-                    url: 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-f3&clothing%5B%5D=blazerSweater&skinColor%5B%5D=d08b5b&hairColor%5B%5D=4a312c',
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-f3&clothing[]=blazerAndSweater&top[]=straight01&skinColor[]=d08b5b&hairColor[]=4a312c',
                     label: 'Style 3',
                   },
                   {
-                    url: 'https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=srm-f4&clothing%5B%5D=blazerSweater&skinColor%5B%5D=ae5d29&hairColor%5B%5D=2c1b18',
+                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-f4&clothing[]=blazerAndSweater&top[]=bob&skinColor[]=ae5d29&hairColor[]=2c1b18',
                     label: 'Style 4',
                   },
                 ];
+
 
                 const avatars = userGender === 'female' ? FEMALE_AVATARS : MALE_AVATARS;
                 const genderLabel = userGender === 'female' ? '👩 Formal Female Avatars' : '👨 Formal Male Avatars';
