@@ -285,17 +285,6 @@ export default function AuthScreen({ onLogin, onBrowse }) {
             </button>
           </form>
         )}
-
-        {onBrowse && (
-          <button
-            type="button"
-            className="nav-btn nav-btn-secondary"
-            onClick={onBrowse}
-            style={{ width: '100%', marginTop: '1rem', justifyContent: 'center' }}
-          >
-            Continue browsing without signing in
-          </button>
-        )}
       </div>
     </div>
   );
