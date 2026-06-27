@@ -12,7 +12,7 @@ import CartPage from './components/CartPage';
 import ChatModal from './components/ChatModal';
 import ProfileEditModal from './components/ProfileEditModal';
 import { api, getToken, setToken } from './api/client';
-import { Grid, List, Shield, CheckCircle, Trash2, Heart, Award, ShoppingCart, Pencil, Save, X, Phone, MapPin } from 'lucide-react';
+import { Grid, List, Shield, CheckCircle, Trash2, Heart, Award, ShoppingCart } from 'lucide-react';
 
 function loadStoredArray(key) {
   try {
@@ -54,7 +54,6 @@ export default function App() {
   const [sellModalOpen, setSellModalOpen] = useState(false);
   const [editingListing, setEditingListing] = useState(null);
   const [activeChatListing, setActiveChatListing] = useState(null);
-  const [avatarEditOpen, setAvatarEditOpen] = useState(false);
   const [profileEditOpen, setProfileEditOpen] = useState(false);
 
   // User Profile State (dynamic, loaded from local storage)
@@ -275,16 +274,6 @@ export default function App() {
     }
   };
 
-  const handleUpdateAvatar = async (avatarUrl) => {
-    try {
-      const { user } = await api.updateAvatar(avatarUrl);
-      setUserProfile(user);
-      localStorage.setItem('srm_user_profile', JSON.stringify(user));
-      setAvatarEditOpen(false);
-    } catch (err) {
-      alert(err.message || 'Failed to update avatar.');
-    }
-  };
 
   const handleUpdateProfile = async (data) => {
     try {
@@ -581,8 +570,8 @@ export default function App() {
             {/* Sidebar info */}
             <div className="profile-sidebar glass-panel">
 
-              {/* Avatar with edit button */}
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: '0.5rem' }}>
+              {/* Avatar — auto-assigned based on gender, no manual picker */}
+              <div style={{ marginBottom: '0.5rem' }}>
                 <div className="profile-avatar-large">
                   <img
                     src={userProfile?.avatar || (userProfile?.gender === 'female'
@@ -592,143 +581,7 @@ export default function App() {
                     alt={userProfile?.name}
                   />
                 </div>
-                <button
-                  onClick={() => setAvatarEditOpen(!avatarEditOpen)}
-                  title="Edit Avatar"
-                  style={{
-                    position: 'absolute', bottom: 4, right: 4,
-                    width: '30px', height: '30px', borderRadius: '50%',
-                    background: 'var(--primary-color)', border: '2px solid white',
-                    color: 'white', cursor: 'pointer', display: 'flex',
-                    alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.75rem', boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                    transition: 'transform 0.2s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
-                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                  <Pencil size={13} />
-                </button>
               </div>
-
-              {/* Avatar picker */}
-              {avatarEditOpen && (() => {
-                const userGender = userProfile?.gender || 'male';
-
-                const MALE_AVATARS = [
-                  {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m1&clothing[]=blazerAndShirt&facialHairProbability=0&skinColor[]=ffdbb4&hairColor[]=2c1b18',
-                    label: 'Style 1',
-                  },
-                  {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m2&clothing[]=blazerAndShirt&facialHairProbability=0&skinColor[]=f8b4a0&hairColor[]=4a312c',
-                    label: 'Style 2',
-                  },
-                  {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m3&clothing[]=blazerAndShirt&facialHairProbability=0&skinColor[]=d08b5b&hairColor[]=2c1b18',
-                    label: 'Style 3',
-                  },
-                  {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-m4&clothing[]=blazerAndShirt&facialHairProbability=0&skinColor[]=ae5d29&hairColor[]=b58143',
-                    label: 'Style 4',
-                  },
-                ];
-
-                const FEMALE_AVATARS = [
-                  {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-f1&clothing[]=blazerAndSweater&top[]=curly&skinColor[]=ffdbb4&hairColor[]=2c1b18',
-                    label: 'Style 1',
-                  },
-                  {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-f2&clothing[]=blazerAndSweater&top[]=longButNotTooLong&skinColor[]=f8b4a0&hairColor[]=b58143',
-                    label: 'Style 2',
-                  },
-                  {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-f3&clothing[]=blazerAndSweater&top[]=straight01&skinColor[]=d08b5b&hairColor[]=4a312c',
-                    label: 'Style 3',
-                  },
-                  {
-                    url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=srm-f4&clothing[]=blazerAndSweater&top[]=bob&skinColor[]=ae5d29&hairColor[]=2c1b18',
-                    label: 'Style 4',
-                  },
-                ];
-
-
-                const avatars = userGender === 'female' ? FEMALE_AVATARS : MALE_AVATARS;
-                const genderLabel = userGender === 'female' ? '👩 Formal Female Avatars' : '👨 Formal Male Avatars';
-
-                return (
-                  <div style={{
-                    background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)',
-                    borderRadius: '16px', padding: '1.25rem', marginBottom: '1rem',
-                    boxShadow: 'var(--shadow-lg)',
-                  }}>
-                    <p style={{ margin: '0 0 0.25rem', fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                      Choose your avatar
-                    </p>
-                    <p style={{ margin: '0 0 0.85rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                      {genderLabel}
-                    </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem' }}>
-                      {avatars.map(({ url, label }) => {
-                        const isSelected = userProfile?.avatar === url;
-                        return (
-                          <button
-                            key={url}
-                            onClick={() => handleUpdateAvatar(url)}
-                            title={label}
-                            style={{
-                              padding: '0.85rem 0.5rem', borderRadius: '14px', cursor: 'pointer',
-                              border: isSelected ? '2.5px solid var(--primary-color)' : '1.5px solid var(--glass-border)',
-                              background: isSelected ? 'rgba(0,58,112,0.12)' : 'rgba(255,255,255,0.04)',
-                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem',
-                              transition: 'all 0.2s',
-                              position: 'relative',
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.borderColor = 'var(--primary-color)';
-                              e.currentTarget.style.background = 'rgba(0,58,112,0.08)';
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.borderColor = isSelected ? 'var(--primary-color)' : 'var(--glass-border)';
-                              e.currentTarget.style.background = isSelected ? 'rgba(0,58,112,0.12)' : 'rgba(255,255,255,0.04)';
-                            }}
-                          >
-                            {isSelected && (
-                              <span style={{
-                                position: 'absolute', top: '6px', right: '6px',
-                                background: 'var(--primary-color)', color: 'white',
-                                borderRadius: '50%', width: '18px', height: '18px',
-                                fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontWeight: 700,
-                              }}>✓</span>
-                            )}
-                            <img
-                              src={url}
-                              alt={label}
-                              style={{ width: '68px', height: '68px', borderRadius: '50%', display: 'block', border: isSelected ? '2px solid var(--primary-color)' : '2px solid transparent' }}
-                            />
-                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: isSelected ? 'var(--primary-color)' : 'var(--text-secondary)' }}>
-                              {label}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <button
-                      onClick={() => setAvatarEditOpen(false)}
-                      style={{
-                        width: '100%', marginTop: '0.85rem', padding: '0.5rem',
-                        borderRadius: '8px', border: '1px solid var(--glass-border)',
-                        background: 'transparent', color: 'var(--text-secondary)',
-                        cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                );
-              })()}
 
 
 
@@ -773,7 +626,7 @@ export default function App() {
                 onClick={() => setProfileEditOpen(true)}
                 style={{ width: '100%', justifyContent: 'center', marginBottom: '0.75rem', gap: '0.5rem' }}
               >
-                <Pencil size={15} />
+                ✏️ 
                 Edit Profile
               </button>
 
