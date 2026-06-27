@@ -250,7 +250,8 @@ export default function ChatModal({ listing, userProfile, onClose }) {
           )}
           
           {messages.map((msg) => {
-            if (msg.senderRole === 'system') {
+            // System messages (meetup scheduled etc.)
+            if (msg.isSystem) {
               return (
                 <div key={msg.id} style={{
                   alignSelf: 'center',
@@ -274,6 +275,10 @@ export default function ChatModal({ listing, userProfile, onClose }) {
               );
             }
             const mine = isMine(msg);
+            // Derive avatar letter: for mine use current user's name, for others use seller name or fallback
+            const avatarLetter = mine
+              ? (userProfile?.name || 'Y').charAt(0).toUpperCase()
+              : (listing.seller?.name || listing.sellerName || 'S').charAt(0).toUpperCase();
             return (
               <div key={msg.id} style={{
                 display: 'flex',
@@ -291,7 +296,7 @@ export default function ChatModal({ listing, userProfile, onClose }) {
                   boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                   border: '1px solid rgba(255,255,255,0.1)'
                 }}>
-                  {msg.sender.charAt(0).toUpperCase()}
+                  {avatarLetter}
                 </div>
                 
                 {/* Bubble */}

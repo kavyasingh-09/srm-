@@ -81,20 +81,19 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
 
--- Drop and recreate chat_messages with TEXT listing_id to support both real and mock listing IDs
+-- Drop and recreate chat_messages with TEXT listing_id and no FK constraints on participants
+-- This allows mock listings (string IDs) and virtual users (id=0) to use the chat
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'chat_messages' AND column_name = 'listing_id' AND data_type = 'integer') THEN
-    DROP TABLE IF EXISTS chat_messages;
-  END IF;
+  DROP TABLE IF EXISTS chat_messages;
 END
 $$;
 
 CREATE TABLE IF NOT EXISTS chat_messages (
   id SERIAL PRIMARY KEY,
   listing_id TEXT NOT NULL,
-  sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  receiver_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  sender_id INTEGER NOT NULL,
+  receiver_id INTEGER NOT NULL,
   encrypted_message TEXT NOT NULL,
   iv TEXT NOT NULL,
   signature TEXT NOT NULL,
