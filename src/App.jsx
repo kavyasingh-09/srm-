@@ -12,7 +12,7 @@ import CartPage from './components/CartPage';
 import ChatModal from './components/ChatModal';
 import ProfileEditModal from './components/ProfileEditModal';
 import { api, getToken, setToken } from './api/client';
-import { Grid, List, Shield, CheckCircle, Trash2, Heart, Award, ShoppingCart } from 'lucide-react';
+import { Grid, List, Shield, CheckCircle, Trash2, Heart, Award, ShoppingCart, Pencil } from 'lucide-react';
 
 function loadStoredArray(key) {
   try {

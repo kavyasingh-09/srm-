@@ -110,33 +110,34 @@ export default function Navbar({
             </button>
 
             {/* Notifications Bell */}
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className={`nav-btn nav-btn-secondary`}
-              style={{ position: 'relative' }}
-              title="Notifications"
-            >
-              <Bell size={16} />
-              {notificationsCount > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-6px',
-                  right: '-6px',
-                  background: '#ef4444',
-                  color: 'white',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  minWidth: '18px',
-                  height: '18px',
-                  borderRadius: '9px',
-                  padding: '0 3px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {notificationsCount}
-                </span>
-              )}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={`nav-btn nav-btn-secondary`}
+                title="Notifications"
+              >
+                <Bell size={16} />
+                {notificationsCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-6px',
+                    background: '#ef4444',
+                    color: 'white',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    minWidth: '18px',
+                    height: '18px',
+                    borderRadius: '9px',
+                    padding: '0 3px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {notificationsCount}
+                  </span>
+                )}
+              </button>
               
               {/* Notifications Dropdown */}
               {showNotifications && isLoggedIn && (
@@ -157,10 +158,13 @@ export default function Navbar({
                   backdropFilter: 'blur(10px)'
                 }}>
                   <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800 }}>Interested Buyers</h4>
+                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800 }}>Notifications</h4>
                     {notificationsCount > 0 && (
                       <button
-                        onClick={() => onClearNotifications()}
+                        onClick={() => {
+                          onClearNotifications();
+                          setShowNotifications(false);
+                        }}
                         style={{
                           background: 'transparent',
                           border: '1px solid var(--glass-border)',
@@ -180,8 +184,7 @@ export default function Navbar({
                   {notificationsCount === 0 ? (
                     <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                       <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔔</div>
-                      <p style={{ margin: 0, fontSize: '0.85rem' }}>No interests yet</p>
-                      <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem' }}>You'll get notified when someone shows interest in your listings</p>
+                      <p style={{ margin: 0, fontSize: '0.85rem' }}>No notifications yet</p>
                     </div>
                   ) : (
                     <div style={{ padding: '0.5rem' }}>
@@ -210,7 +213,7 @@ export default function Navbar({
                   )}
                 </div>
               )}
-            </button>
+            </div>
 
             {/* Cart Icon Button */}
             <button
