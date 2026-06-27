@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import pool from '../db/pool.js';
 import { formatListing, requireAuth } from '../middleware/auth.js';
+import { initialListings } from '../../src/data/mockData.js';
 
 const router = Router();
 
@@ -13,6 +14,14 @@ const LISTING_COLUMNS = `
 function parseListingId(paramId) {
   const match = String(paramId).match(/^lst-(\d+)$/);
   return match ? Number(match[1]) : Number(paramId);
+}
+
+function formatMockListing(item) {
+  if (!item) return null;
+  return {
+    ...item,
+    seller: item.seller ? { ...item.seller } : null,
+  };
 }
 
 // GET /api/listings — all listings visible to everyone
@@ -28,6 +37,38 @@ router.get('/', async (_req, res) => {
   } catch (err) {
     console.error('List listings error:', err);
     res.status(500).json({ error: 'Failed to fetch listings.' });
+  }
+});
+
+// GET /api/listings/:id — fetch one listing, with a mock fallback for seeded demo items
+router.get('/:id', async (req, res) => {
+  try {
+    const listingId = parseListingId(req.params.id);
+    if (!listingId || Number.isNaN(listingId)) {
+      return res.status(400).json({ error: 'Invalid listing id.' });
+    }
+
+    const result = await pool.query(
+      `SELECT ${LISTING_COLUMNS}
+       FROM listings
+       WHERE id = $1
+       LIMIT 1`,
+      [listingId]
+    );
+
+    if (result.rows.length > 0) {
+      return res.json({ listing: formatListing(result.rows[0]) });
+    }
+
+    const fallback = initialListings.find((item) => String(item.id) === String(req.params.id));
+    if (fallback) {
+      return res.json({ listing: formatMockListing(fallback) });
+    }
+
+    return res.status(404).json({ error: 'Listing not found.' });
+  } catch (err) {
+    console.error('Get listing error:', err);
+    res.status(500).json({ error: 'Failed to fetch listing.' });
   }
 });
 
