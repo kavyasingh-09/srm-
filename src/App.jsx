@@ -594,18 +594,6 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="profile-actions">
-                <button className="nav-btn nav-btn-primary" onClick={() => setSellModalOpen(true)} style={{ width: '100%', justifyContent: 'center' }}>
-                  Post Item
-                </button>
-                <button className="nav-btn nav-btn-secondary" onClick={() => setCurrentView('lostfound')} style={{ width: '100%', justifyContent: 'center' }}>
-                  Open Lost & Found
-                </button>
-                <button className="nav-btn nav-btn-secondary" onClick={() => setCurrentView('browse')} style={{ width: '100%', justifyContent: 'center' }}>
-                  Browse Marketplace
-                </button>
-              </div>
-
               <button
                 className="nav-btn nav-btn-secondary"
                 onClick={handleLogout}
