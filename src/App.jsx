@@ -66,6 +66,16 @@ export default function App() {
 
   const [showNotifications, setShowNotifications] = useState(false);
 
+  const isOwnListing = (item) => {
+    if (!item || !userProfile) return false;
+    const ownerId = item.userId != null ? String(item.userId) : null;
+    const currentUserId = userProfile.id != null ? String(userProfile.id) : null;
+    const ownerEmail = item.seller?.email?.toLowerCase?.() || '';
+    const currentEmail = userProfile.email?.toLowerCase?.() || '';
+
+    return (ownerId && currentUserId && ownerId === currentUserId) || (ownerEmail && currentEmail && ownerEmail === currentEmail);
+  };
+
   // Reset hostel filter when campus changes
   useEffect(() => {
     setSelectedHostel('All Hostels');
@@ -141,6 +151,19 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('srm_cart', JSON.stringify(cart));
   }, [cart]);
+
+  useEffect(() => {
+    if (!userProfile || listings.length === 0 || cart.length === 0) return;
+
+    const filteredCart = cart.filter((itemId) => {
+      const item = listings.find((listing) => listing.id === itemId);
+      return !item || !isOwnListing(item);
+    });
+
+    if (filteredCart.length !== cart.length) {
+      setCart(filteredCart);
+    }
+  }, [cart, listings, userProfile]);
 
   // Load user notifications from DB when logged in
   useEffect(() => {
@@ -262,6 +285,11 @@ export default function App() {
 
   const handleToggleCart = (itemId) => {
     if (!requireLogin()) return;
+    const item = listings.find((listing) => listing.id === itemId);
+    if (item && isOwnListing(item)) {
+      alert('You cannot order your own listing.');
+      return;
+    }
     setCart(prev =>
       prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
     );
@@ -431,6 +459,7 @@ export default function App() {
     : [];
   // User's favorite listings
   const favoriteListings = listings.filter(item => favorites.includes(item.id));
+  const visibleCartItems = listings.filter((item) => cart.includes(item.id) && !isOwnListing(item));
 
   return (
     <div className="app-container">
@@ -444,7 +473,7 @@ export default function App() {
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         favoritesCount={favorites.length}
-        cartCount={cart.length}
+        cartCount={visibleCartItems.length}
         notificationsCount={notifications.length}
         notifications={notifications}
         showNotifications={showNotifications}
@@ -602,6 +631,7 @@ export default function App() {
                 onViewProduct={setSelectedProduct}
                 cart={cart}
                 onToggleCart={handleToggleCart}
+                currentUser={userProfile}
                 onOpenSellModal={handleOpenSellModal}
               />
               )}
@@ -625,7 +655,7 @@ export default function App() {
         {currentView === 'cart' && (
           isLoggedIn ? (
           <CartPage
-            cartItems={listings.filter(item => cart.includes(item.id))}
+            cartItems={visibleCartItems}
             onRemoveFromCart={handleRemoveFromCart}
             onClearCart={handleClearCart}
             onViewProduct={setSelectedProduct}

@@ -8,6 +8,7 @@ export default function ListingsGrid({
   onViewProduct,
   cart = [],
   onToggleCart,
+  currentUser = null,
   onOpenSellModal
 }) {
   if (listings.length === 0) {
@@ -34,6 +35,10 @@ export default function ListingsGrid({
       {listings.map((item) => {
         const isFavorite = favorites.includes(item.id);
         const inCart = cart && cart.includes(item.id);
+        const isOwnListing = !!currentUser && (
+          (item.userId != null && String(item.userId) === String(currentUser.id)) ||
+          (item.seller?.email && currentUser.email && item.seller.email.toLowerCase() === currentUser.email.toLowerCase())
+        );
 
         return (
           <div
@@ -76,13 +81,16 @@ export default function ListingsGrid({
               {/* Add to Cart button — icon only */}
               <button
                 className={`cart-btn ${inCart ? 'in-cart' : ''}`}
+                disabled={isOwnListing}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onToggleCart && onToggleCart(item.id);
+                  if (!isOwnListing) {
+                    onToggleCart && onToggleCart(item.id);
+                  }
                 }}
-                title={inCart ? 'Remove from Cart' : 'Add to Cart'}
+                title={isOwnListing ? 'Your listing' : inCart ? 'Remove from Cart' : 'Add to Cart'}
               >
-                <ShoppingCart size={16} fill={inCart ? 'currentColor' : 'none'} />
+                <ShoppingCart size={16} fill={inCart ? 'currentColor' : 'none'} opacity={isOwnListing ? 0.45 : 1} />
               </button>
             </div>
 
