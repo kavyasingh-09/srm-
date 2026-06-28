@@ -1,69 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, MapPin, Mail, MessageCircle, ShieldCheck, Calendar,
-  Lock, Unlock, CreditCard, Smartphone, Building2, Wallet,
-  Banknote, Send, Instagram, Phone, Heart
+  Lock, Unlock, Building2, Send, Instagram, Phone, Heart
 } from 'lucide-react';
-
-// Payment method definitions
-const PAYMENT_METHODS = [
-  {
-    id: 'upi',
-    label: 'UPI / QR Code',
-    icon: <Smartphone size={18} />,
-    color: '#8b5cf6',
-    apps: ['GPay', 'PhonePe', 'Paytm', 'BHIM'],
-    desc: 'Pay instantly via any UPI app'
-  },
-  {
-    id: 'card',
-    label: 'Credit / Debit Card',
-    icon: <CreditCard size={18} />,
-    color: '#3b82f6',
-    apps: ['Visa', 'Mastercard', 'RuPay'],
-    desc: 'All major cards accepted'
-  },
-  {
-    id: 'netbanking',
-    label: 'Net Banking',
-    icon: <Building2 size={18} />,
-    color: '#06b6d4',
-    apps: ['SBI', 'HDFC', 'ICICI', 'Axis'],
-    desc: 'Transfer directly from your bank'
-  },
-  {
-    id: 'wallet',
-    label: 'Wallets',
-    icon: <Wallet size={18} />,
-    color: '#10b981',
-    apps: ['Paytm', 'Amazon Pay', 'MobiKwik'],
-    desc: 'Pay using mobile wallets'
-  },
-  {
-    id: 'cash',
-    label: 'Cash on Meetup',
-    icon: <Banknote size={18} />,
-    color: '#f59e0b',
-    apps: [],
-    desc: 'Pay in cash at the campus meetup spot'
-  }
-];
 
 export default function ProductDetailModal({ product, onClose, onVerifyUserSimulation, onOpenChat, userProfile, onShowInterest }) {
   if (!product) return null;
 
   const [contactRevealed, setContactRevealed] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [payConfirmed, setPayConfirmed] = useState(false);
   const [interestShown, setInterestShown] = useState(false);
 
   // Reset lock state when switching between products
   useEffect(() => {
     setContactRevealed(false);
     setIsRequesting(false);
-    setSelectedPayment(null);
-    setPayConfirmed(false);
     setInterestShown(false);
   }, [product.id]);
 
@@ -73,11 +24,6 @@ export default function ProductDetailModal({ product, onClose, onVerifyUserSimul
       setIsRequesting(false);
       setContactRevealed(true);
     }, 1200);
-  };
-
-  const handleConfirmPayment = () => {
-    setPayConfirmed(true);
-    setTimeout(() => setPayConfirmed(false), 4000);
   };
 
   const handleShowInterest = () => {
@@ -114,58 +60,7 @@ export default function ProductDetailModal({ product, onClose, onVerifyUserSimul
         <style>{`
           @keyframes spin { to { transform: rotate(360deg); } }
           .spinner-icon { animation: spin 1s linear infinite; }
-          
-          @keyframes paySuccess {
-            0% { transform: scale(0.9); opacity: 0; }
-            50% { transform: scale(1.03); }
-            100% { transform: scale(1); opacity: 1; }
-          }
-          .pay-success-anim { animation: paySuccess 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-          
-          .pay-method-card {
-            display: flex; 
-            align-items: center; 
-            gap: 0.75rem;
-            padding: 0.75rem 1rem; 
-            border-radius: 14px;
-            border: 1.5px solid var(--glass-border); 
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.02); 
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-          }
-          .pay-method-card:hover { 
-            border-color: var(--primary-color); 
-            background: rgba(59, 130, 246, 0.05); 
-            transform: translateY(-1px);
-          }
-          .pay-method-card.selected { 
-            border-color: var(--primary-color); 
-            background: rgba(59, 130, 246, 0.08); 
-            box-shadow: 0 0 12px rgba(59, 130, 246, 0.1);
-          }
-          
-          .pay-icon-box {
-            width: 38px; 
-            height: 38px; 
-            border-radius: 10px;
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            color: white; 
-            flex-shrink: 0;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-          }
-          
-          .pay-app-chip {
-            font-size: 0.62rem; 
-            padding: 2px 6px; 
-            border-radius: 4px;
-            background: rgba(255, 255, 255, 0.08); 
-            color: var(--text-secondary);
-            font-weight: 700;
-            border: 1px solid var(--glass-border);
-          }
-          
+
           .social-btn {
             display: flex; 
             align-items: center; 
@@ -280,95 +175,37 @@ export default function ProductDetailModal({ product, onClose, onVerifyUserSimul
                   </div>
                 </div>
               )}
-              {/* ── PAYMENT OPTIONS PANEL ── */}
+
               <div className="glass-panel" style={{ borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--glass-border)' }}>
-                <h4 style={{ 
-                  fontSize: '0.8rem', 
-                  fontWeight: 800, 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '1px', 
-                  color: 'var(--text-secondary)', 
+                <h4 style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  color: 'var(--text-secondary)',
                   marginBottom: '1rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.4rem'
                 }}>
-                  <CreditCard size={14} /> Payment Options
+                  <Calendar size={14} /> Meetup Payment
                 </h4>
 
-                {payConfirmed ? (
-                  <div className="pay-success-anim" style={{ 
-                    textAlign: 'center', 
-                    padding: '1.25rem', 
-                    background: 'rgba(16, 185, 129, 0.1)', 
-                    borderRadius: '12px', 
-                    border: '1.5px solid rgba(16, 185, 129, 0.25)' 
-                  }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>✨</div>
-                    <h5 style={{ color: '#10b981', fontWeight: 800, fontSize: '0.95rem', margin: 0 }}>Method Confirmed</h5>
-                    <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.35rem 0 0', lineHeight: '1.4' }}>
-                      Coordinate with the seller via chat/social to finalize payment during the physical handover.
-                    </p>
+                <div style={{
+                  padding: '0.95rem 1rem',
+                  borderRadius: '12px',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.18)',
+                  color: 'var(--text-primary)',
+                  lineHeight: '1.5'
+                }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.92rem', marginBottom: '0.25rem' }}>
+                    Pay only when you meet
                   </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
-                      {PAYMENT_METHODS.map((method) => (
-                        <div
-                          key={method.id}
-                          className={`pay-method-card ${selectedPayment === method.id ? 'selected' : ''}`}
-                          onClick={() => setSelectedPayment(method.id)}
-                        >
-                          <div className="pay-icon-box" style={{ background: method.color }}>
-                            {method.icon}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>{method.label}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '1px' }}>{method.desc}</div>
-                            {method.apps.length > 0 && (
-                              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '6px' }}>
-                                {method.apps.map(app => (
-                                  <span key={app} className="pay-app-chip">{app}</span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <div style={{
-                            width: '18px', 
-                            height: '18px', 
-                            borderRadius: '50%',
-                            border: `2px solid ${selectedPayment === method.id ? 'var(--primary-color)' : 'var(--text-light)'}`,
-                            background: selectedPayment === method.id ? 'var(--primary-color)' : 'transparent',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0, 
-                            transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
-                          }}>
-                            {selectedPayment === method.id && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {selectedPayment && (
-                      <button
-                        onClick={handleConfirmPayment}
-                        className="nav-btn nav-btn-primary"
-                        style={{
-                          width: '100%', 
-                          padding: '0.75rem',
-                          borderRadius: '12px',
-                          fontWeight: 700, 
-                          fontSize: '0.88rem',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        ✓ Select {PAYMENT_METHODS.find(m => m.id === selectedPayment)?.label}
-                      </button>
-                    )}
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                    Meet the seller in person, inspect the item, and complete payment on the spot after both sides agree.
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
