@@ -85,15 +85,16 @@ export default function Navbar({
             <button
               onClick={() => goToView('profile')}
               className={`nav-btn nav-btn-secondary ${currentView === 'profile' ? 'active' : ''}`}
-              style={{ position: 'relative' }}
+              style={{ position: 'relative', overflow: 'visible' }}
             >
               <User size={16} />
               Profile
               {favoritesCount > 0 && (
                 <span style={{
                   position: 'absolute',
-                  top: '-6px',
-                  right: '-6px',
+                  top: '0',
+                  right: '0',
+                  transform: 'translate(35%, -35%)',
                   background: '#ef4444',
                   color: 'white',
                   fontSize: '0.7rem',
@@ -103,7 +104,10 @@ export default function Navbar({
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  border: '2px solid var(--card-bg)',
+                  boxShadow: '0 0 0 1px rgba(239, 68, 68, 0.25)',
+                  zIndex: 5
                 }}>
                   {favoritesCount}
                 </span>
@@ -111,18 +115,20 @@ export default function Navbar({
             </button>
 
             {/* Notifications Bell */}
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', overflow: 'visible' }}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className={`nav-btn nav-btn-secondary`}
                 title="Notifications"
+                style={{ overflow: 'visible' }}
               >
                 <Bell size={16} />
                 {notificationsCount > 0 && (
                   <span style={{
                     position: 'absolute',
-                    top: '-6px',
-                    right: '-6px',
+                    top: '0',
+                    right: '0',
+                    transform: 'translate(35%, -35%)',
                     background: '#ef4444',
                     color: 'white',
                     fontSize: '0.7rem',
@@ -133,7 +139,10 @@ export default function Navbar({
                     padding: '0 3px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    border: '2px solid var(--card-bg)',
+                    boxShadow: '0 0 0 1px rgba(239, 68, 68, 0.25)',
+                    zIndex: 5
                   }}>
                     {notificationsCount}
                   </span>
@@ -229,15 +238,16 @@ export default function Navbar({
             <button
               onClick={() => goToView('cart')}
               className={`nav-btn nav-btn-secondary ${currentView === 'cart' ? 'active' : ''}`}
-              style={{ position: 'relative', ...(currentView === 'cart' ? { color: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : {}) }}
+              style={{ position: 'relative', overflow: 'visible', ...(currentView === 'cart' ? { color: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : {}) }}
               title={`My Cart (${cartCount} items)`}
             >
               <ShoppingCart size={16} />
               {cartCount > 0 && (
                 <span style={{
                   position: 'absolute',
-                  top: '-6px',
-                  right: '-6px',
+                  top: '0',
+                  right: '0',
+                  transform: 'translate(35%, -35%)',
                   background: '#f59e0b',
                   color: 'white',
                   fontSize: '0.7rem',
@@ -248,7 +258,10 @@ export default function Navbar({
                   padding: '0 3px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  border: '2px solid var(--card-bg)',
+                  boxShadow: '0 0 0 1px rgba(245, 158, 11, 0.25)',
+                  zIndex: 5
                 }}>
                   {cartCount}
                 </span>
