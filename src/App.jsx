@@ -659,6 +659,7 @@ export default function App() {
             onRemoveFromCart={handleRemoveFromCart}
             onClearCart={handleClearCart}
             onViewProduct={setSelectedProduct}
+            onOpenChat={setActiveChatListing}
           />
           ) : (
             <AuthScreen onLogin={handleLogin} />
