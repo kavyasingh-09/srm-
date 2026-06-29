@@ -151,21 +151,32 @@ export default function Navbar({
               
               {/* Notifications Dropdown */}
               {showNotifications && isLoggedIn && (
+                <>
+                <div
+                  onClick={() => setShowNotifications(false)}
+                  style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(4, 10, 24, 0.58)',
+                    backdropFilter: 'blur(6px)',
+                    zIndex: 998,
+                  }}
+                />
                 <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  marginTop: '0.5rem',
-                  background: 'var(--card-bg)',
-                  border: '1.5px solid var(--glass-border)',
-                  borderRadius: '14px',
-                  boxShadow: 'var(--shadow-lg)',
-                  minWidth: '320px',
-                  maxWidth: '360px',
-                  maxHeight: '400px',
+                  position: 'fixed',
+                  top: '84px',
+                  right: '24px',
+                  background: 'linear-gradient(180deg, rgba(11, 18, 34, 0.99) 0%, rgba(8, 14, 28, 0.98) 100%)',
+                  border: '1px solid rgba(255, 255, 255, 0.09)',
+                  borderRadius: '16px',
+                  boxShadow: '0 24px 70px rgba(0, 0, 0, 0.55)',
+                  minWidth: '340px',
+                  maxWidth: '380px',
+                  maxHeight: '420px',
                   overflowY: 'auto',
-                  zIndex: 1000,
-                  backdropFilter: 'blur(10px)'
+                  zIndex: 999,
+                  backdropFilter: 'blur(18px)',
+                  color: 'var(--text-primary)'
                 }}>
                   <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800 }}>Notifications</h4>
@@ -231,6 +242,7 @@ export default function Navbar({
                     </div>
                   )}
                 </div>
+                </>
               )}
             </div>
 
