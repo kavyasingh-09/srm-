@@ -152,16 +152,6 @@ export default function Navbar({
               {/* Notifications Dropdown */}
               {showNotifications && isLoggedIn && (
                 <>
-                <div
-                  onClick={() => setShowNotifications(false)}
-                  style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(4, 10, 24, 0.58)',
-                    backdropFilter: 'blur(6px)',
-                    zIndex: 998,
-                  }}
-                />
                 <div style={{
                   position: 'fixed',
                   top: '84px',
