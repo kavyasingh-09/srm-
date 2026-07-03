@@ -8,7 +8,7 @@ import ProductDetailModal from './components/ProductDetailModal';
 import LostFoundHub from './components/LostFoundHub';
 import AuthScreen from './components/AuthScreen';
 import CartPage from './components/CartPage';
-import SoftAurora from './components/SoftAurora';
+import LineWaves from './components/LineWaves';
 
 import ChatModal from './components/ChatModal';
 import ProfileEditModal from './components/ProfileEditModal';
@@ -464,7 +464,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <SoftAurora />
+      <LineWaves />
       <div className="app-container">
       {/* Top Navigation */}
       <Navbar 
