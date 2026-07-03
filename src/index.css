@@ -127,10 +127,18 @@ button, input, select, textarea {
 }
 
 /* App Container Layout */
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  isolation: isolate;
+}
+
 .app-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  position: relative;
+  z-index: 1;
 }
 
 /* Header & Navbar Styling */

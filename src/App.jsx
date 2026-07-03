@@ -8,6 +8,7 @@ import ProductDetailModal from './components/ProductDetailModal';
 import LostFoundHub from './components/LostFoundHub';
 import AuthScreen from './components/AuthScreen';
 import CartPage from './components/CartPage';
+import SoftAurora from './components/SoftAurora';
 
 import ChatModal from './components/ChatModal';
 import ProfileEditModal from './components/ProfileEditModal';
@@ -462,7 +463,9 @@ export default function App() {
   const visibleCartItems = listings.filter((item) => cart.includes(item.id) && !isOwnListing(item));
 
   return (
-    <div className="app-container">
+    <div className="app-shell">
+      <SoftAurora />
+      <div className="app-container">
       {/* Top Navigation */}
       <Navbar 
         isLoggedIn={isLoggedIn}
@@ -917,6 +920,7 @@ export default function App() {
           onClose={() => setActiveChatListing(null)}
         />
       )}
+      </div>
     </div>
   );
 }
