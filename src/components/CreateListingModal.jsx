@@ -148,6 +148,11 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, o
       }
     }
 
+    if (!uploadedImage && !customImageUrl.trim()) {
+      alert('Please add an item photo before posting.');
+      return;
+    }
+
     const finalImage = uploadedImage || customImageUrl.trim() || (category === 'CT Test Papers' ? defaultPaperThumbnail : '');
     const finalTitle = isCTPaper && !isEditing ? `CT Test Paper - ${new Date().toLocaleDateString()}` : title;
     const finalFileUrl = uploadedFileUrl || editingListing?.fileUrl || '';
@@ -419,11 +424,11 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, o
             {/* Image Selection Presets / Custom */}
             {category !== 'CT Test Papers' && (
               <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block' }}>Item Photo</label>
+                <label style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'block' }}>Item Photo *</label>
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Paste an image URL (optional)"
+                  placeholder="Paste an image URL or upload a photo"
                   value={customImageUrl}
                   onChange={(e) => {
                     setCustomImageUrl(e.target.value);
@@ -495,6 +500,9 @@ export default function CreateListingModal({ isOpen, onClose, onSubmitListing, o
                     </button>
                   </div>
                 )}
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-light)', marginTop: '0.45rem', display: 'block' }}>
+                  Add a clear photo so buyers can inspect the item properly before chatting.
+                </span>
               </div>
             )}
 
