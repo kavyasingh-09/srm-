@@ -44,50 +44,6 @@ export const initialListings = [
     createdAt: "2026-06-19"
   },
   {
-    id: "lst-note-3",
-    title: "CT Test Paper Pack: Transforms & PDE",
-    category: "CT Test Papers",
-    campus: "Kattankulathur",
-    hostel: "Oori Hostel",
-    courseCode: "21MAB201T",
-    meetupHotspot: "UB Central Library Entrance",
-    price: 0,
-    tradeType: "Free",
-    condition: "New (Sealed)",
-    description: "A set of CT test papers and solved answer sheets for Fourier Series, Fourier Transforms, Laplace, Z-Transforms, and Partial Differential Equations. Ideal for end-sem preparation.",
-    image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=600&auto=format&fit=crop&q=60",
-    seller: {
-      name: "Meera Nair",
-      email: "meera_n@srmist.edu.in",
-      phone: "+91 94445 55666",
-      verified: true,
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Meera"
-    },
-    createdAt: "2026-06-20"
-  },
-  {
-    id: "lst-note-4",
-    title: "CT Test Papers: Compiler Design (Units 1-5)",
-    category: "CT Test Papers",
-    campus: "Kattankulathur",
-    hostel: "Kaari Hostel",
-    courseCode: "21CSC303J",
-    meetupHotspot: "Tech Park (TP) Entrance Benches",
-    price: 50,
-    tradeType: "Sell",
-    condition: "Like New",
-    description: "A bundle of CT test papers and solved model answers for Compiler Design. Covers lexical analysis, parsing, syntax directed translation, and code generation.",
-    image: "https://images.unsplash.com/photo-1517842645767-c639042777db?w=600&auto=format&fit=crop&q=60",
-    seller: {
-      name: "Rohit Sharma",
-      email: "rohit_s@srmist.edu.in",
-      phone: "+91 99911 22334",
-      verified: true,
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rohit"
-    },
-    createdAt: "2026-06-18"
-  },
-  {
     id: "lst-proj-4",
     meetupHotspot: "Biotech Block Lobby (G.D. Naidu Hall)",
     title: "IoT Smart Agriculture Kit (NodeMCU + Soil + Water Pump)",
@@ -191,46 +147,6 @@ export const initialListings = [
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aman"
     },
     createdAt: "2026-06-20"
-  },
-  {
-    id: "lst-note-1",
-    title: "DSA CT Test Papers (Arrays, Trees, Graphs)",
-    category: "CT Test Papers",
-    campus: "Kattankulathur",
-    hostel: "Paari Hostel",
-    price: 0,
-    tradeType: "Free",
-    condition: "Like New",
-    description: "Comprehensive handwritten notes for Data Structures and Algorithms. Covers all 5 units: Arrays, Linked Lists, Stacks/Queues, Trees, and Graphs. Perfect for end-sem preparation. Clear diagrams included.",
-    image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=600&auto=format&fit=crop&q=60",
-    seller: {
-      name: "Arjun Singh",
-      email: "arjun_s@srmist.edu.in",
-      phone: "+91 98765 12345",
-      verified: true,
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun"
-    },
-    createdAt: "2026-06-20"
-  },
-  {
-    id: "lst-note-2",
-    title: "CT Test Papers: Operating Systems PYQs (2021-2025)",
-    category: "CT Test Papers",
-    campus: "Kattankulathur",
-    hostel: "Kalpana Chawla Hostel",
-    price: 80,
-    tradeType: "Sell",
-    condition: "Good",
-    description: "End-semester CT test papers with verified solutions compiled from senior reference materials. Covers CPU Scheduling, Deadlocks, Memory Management, and File Systems.",
-    image: "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=600&auto=format&fit=crop&q=60",
-    seller: {
-      name: "Priya Murthy",
-      email: "priya_m@srmist.edu.in",
-      phone: "+91 88990 01122",
-      verified: true,
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Priya"
-    },
-    createdAt: "2026-06-19"
   },
   {
     id: "lst-proj-1",
@@ -944,7 +860,6 @@ export const srmHostels = {
 
 export const categories = [
   "All Categories",
-  "CT Test Papers",
   "Projects",
   "Electronics",
   "Bicycles & Transport",

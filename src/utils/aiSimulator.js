@@ -11,11 +11,6 @@ const LISTING_TEMPLATES = {
     { title: "Previous Year Question Paper Collection", description: "Complete set of end-semester PYQs with solved answers. Excellent for exam preparation. Includes model papers for internal exams.", price: 120 },
     { title: "Engineering Reference Book (Like New)", description: "Standard SRM reference textbook, barely used. No missing or torn pages. Selling after completing the course.", price: 200 },
   ],
-  "CT Test Papers": [
-    { title: "CT Test Paper Set: DSA & Algorithms", description: "A complete set of CT test papers with solutions for arrays, trees, graphs, and dynamic programming.", price: 40 },
-    { title: "CT Test Papers: Physics & Chemistry", description: "Previous CT papers for first-year Physics and Chemistry with answer keys and exam-style formatting.", price: 30 },
-    { title: "CT Test Papers: Computer Networks", description: "CT paper collection for Computer Networks with solved questions and quick revision notes.", price: 35 },
-  ],
   "Electronics": [
     { title: "Scientific Calculator (Exam Approved)", description: "Works perfectly for all SRM internal and end-semester examinations. Solving capability: matrices, integration, statistics, and complex equations. Includes original cover case.", price: 750 },
     { title: "USB-C Laptop Charger (65W)", description: "Compatible with most modern laptops. 65W fast charging. Cable is intact with no fraying. Tested and working.", price: 600 },
@@ -62,7 +57,6 @@ export function generateAIListing(category) {
 // ─── AI PRICE RECOMMENDATION ──────────────────────────────────────
 const PRICE_RANGES = {
   "Textbooks":          { newBase: 500,  sellRatio: 0.50 },
-  "CT Test Papers": { newBase: 150,  sellRatio: 0.35 },
   "Electronics":        { newBase: 2500, sellRatio: 0.60 },
   "Bicycles & Transport":{ newBase: 6000, sellRatio: 0.55 },
   "Hostel Essentials":  { newBase: 800,  sellRatio: 0.50 },
@@ -99,7 +93,6 @@ const UNREALISTIC_PRICE_RANGES = {
   "Electronics":          { min: 50,   max: 50000 },
   "Bicycles & Transport": { min: 200,  max: 30000 },
   "Textbooks":            { min: 10,   max: 3000  },
-  "CT Test Papers": { min: 0,    max: 800  },
   "Hostel Essentials":    { min: 10,   max: 5000  },
   "Lab Coats & Fashion":  { min: 20,   max: 2000  },
   "Projects":             { min: 100,  max: 25000 },

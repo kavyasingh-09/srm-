@@ -156,26 +156,6 @@ export default function ProductDetailModal({ product, onClose, onVerifyUserSimul
                   Condition: {product.condition}
                 </span>
               </div>
-              {product.category === 'CT Test Papers' && product.fileUrl && (
-                <div className="glass-panel" style={{ borderRadius: '16px', padding: '1rem', border: '1px solid var(--glass-border)', marginBottom: '1rem' }}>
-                  <h4 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>CT Test Paper</h4>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 700 }}>{product.fileName || 'Download Paper'}</p>
-                      <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-light)' }}>Uploaded by the seller for direct download.</p>
-                    </div>
-                    <a
-                      href={product.fileUrl}
-                      download={product.fileName || 'ct-test-paper'}
-                      className="nav-btn nav-btn-primary"
-                      style={{ borderRadius: '12px', padding: '0.8rem 1rem' }}
-                    >
-                      Download
-                    </a>
-                  </div>
-                </div>
-              )}
-
               <div className="glass-panel" style={{ borderRadius: '16px', padding: '1.25rem', border: '1px solid var(--glass-border)' }}>
                 <h4 style={{
                   fontSize: '0.8rem',
